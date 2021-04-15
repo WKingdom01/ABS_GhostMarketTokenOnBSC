@@ -1,7 +1,7 @@
 pragma solidity ^0.8.3;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 
 contract GhostmarketNFT is ERC721, ERC721URIStorage {
     constructor() ERC721("GhostmarketNFT", "GMNFT") {}
