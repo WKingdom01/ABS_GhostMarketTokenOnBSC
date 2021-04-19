@@ -1,4 +1,4 @@
-const GhostmarketNFT = artifacts.require("TestableGhostmarketNFT");
+const GhostmarketNFT = artifacts.require("GhostmarketNFT");
 const TOKEN_NAME = "Ghostmarket NFT"
 const TOKEN_SYMBOL = "GMNFT"
 const TOKEN_URI = "my.app/"

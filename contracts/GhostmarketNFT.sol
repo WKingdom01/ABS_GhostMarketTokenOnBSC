@@ -52,7 +52,7 @@ contract GhostmarketNFT is
         return result;
     }
 
-    function saveFees(uint256 _id, Fee[] memory _fees) internal {
+    function saveFees(uint256 _id, Fee[] memory _fees) public {
         for (uint256 i = 0; i < _fees.length; i++) {
             require(
                 _fees[i].recipient != address(0x0),
@@ -67,7 +67,7 @@ contract GhostmarketNFT is
         uint256 _id,
         address _from,
         address _to
-    ) internal {
+    ) public {
         uint256 length = fees[_id].length;
         for (uint256 i = 0; i < length; i++) {
             if (fees[_id][i].recipient == _from) {
