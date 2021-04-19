@@ -52,24 +52,39 @@ contract GhostmarketNFT is
         return result;
     }
 
-    function mint(
-        address to,
-        uint256 tokenId,
-        Fee[] memory _fees
-    ) public pure override {
-        super._mint(to, tokenId);
-        address[] memory recipients = new address[](_fees.length);
-        uint256[] memory bps = new uint256[](_fees.length);
+    function saveFees(uint256 _id, Fee[] memory _fees) internal {
         for (uint256 i = 0; i < _fees.length; i++) {
             require(
                 _fees[i].recipient != address(0x0),
                 "Recipient should be present"
             );
             require(_fees[i].value != 0, "Fee value should be positive");
-            fees[tokenId].push(_fees[i]);
-            recipients[i] = _fees[i].recipient;
-            bps[i] = _fees[i].value;
+            fees[_id].push(_fees[i]);
         }
+    }
+
+    function updateAccount(
+        uint256 _id,
+        address _from,
+        address _to
+    ) internal {
+        uint256 length = fees[_id].length;
+        for (uint256 i = 0; i < length; i++) {
+            if (fees[_id][i].recipient == _from) {
+                fees[_id][i].recipient = payable(address(uint160(_to)));
+            }
+        }
+    }
+
+    function mint(
+        address to,
+        uint256 tokenId,
+        Fee[] memory _fees
+    ) public {
+        super._mint(to, tokenId);
+        address[] memory recipients = new address[](_fees.length);
+        uint256[] memory bps = new uint256[](_fees.length);
+        saveFees(tokenId, _fees);
         if (_fees.length > 0) {
             emit SecondarySaleFees(tokenId, recipients, bps);
         }
