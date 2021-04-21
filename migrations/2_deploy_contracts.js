@@ -1,11 +1,11 @@
 
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 
-const NNNToken = artifacts.require('GhostmarketNFT');
+const GhostmarketNFT = artifacts.require('GhostmarketNFT');
 
 module.exports = async function (deployer, network, accounts) {
   const instance = await deployProxy(
-    NNNToken,
+    GhostmarketNFT,
     ["Ghostmarket NFT", "GMNFT", "https://my-json-server.typicode.com/abcoathup/samplenft/tokens/"],
     { deployer, initializer: "initialize", unsafeAllowCustomTypes: true });
   //unsafeAllowCustomTypes Ignores struct mapping in AccessControl, which is fine because it's used in a mapping
