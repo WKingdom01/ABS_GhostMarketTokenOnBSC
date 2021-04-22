@@ -1,6 +1,7 @@
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/presets/ERC721PresetMinterPauserAutoIdUpgradeable.sol";
+import "./LibAttribute.sol";
 
 contract GhostmarketNFT is
     Initializable,
@@ -11,7 +12,15 @@ contract GhostmarketNFT is
         uint256 value;
     }
 
-    // id => fees
+    struct AttributesStruct {
+        string key;
+        string value;
+    }
+
+    // tokenId => attributes
+    mapping(uint256 => AttributesStruct[]) public attribute;
+
+    // token id => fees
     mapping(uint256 => Fee[]) public fees;
 
     event SecondarySaleFees(
@@ -19,6 +28,7 @@ contract GhostmarketNFT is
         address[] recipients,
         uint256[] bps
     );
+    event AttributesSet(uint256 tokenId, AttributesStruct[] attributes);
 
     //name: "GhostmarketNFT" symbol: "GMNFT"
     function initialize(
@@ -28,6 +38,36 @@ contract GhostmarketNFT is
     ) public override initializer {
         __ERC721_init_unchained(name, symbol);
         __ERC721PresetMinterPauserAutoId_init_unchained(name, symbol, uri);
+    }
+
+    function setAttributes(
+        uint256 _tokenId,
+        AttributesStruct[] memory _attributes
+    ) public {
+        for (uint256 i = 0; i < _attributes.length; i++) {
+            require(
+                keccak256(abi.encodePacked(_attributes[i].key)) !=
+                    keccak256(abi.encodePacked("")),
+                "Attribute key should not be empty"
+            );
+            require(
+                keccak256(abi.encodePacked(_attributes[i].value)) !=
+                    keccak256(abi.encodePacked("")),
+                "Attribute value should not be empty"
+            );
+            attribute[_tokenId].push(_attributes[i]);
+            emit AttributesSet(_tokenId, _attributes);
+        }
+    }
+
+    function getAttributes(uint256 _token_id) public returns (string[] memory) {
+        AttributesStruct[] memory _attributes = attribute[_token_id];
+        string[] memory result = new string[](_attributes.length);
+        for (uint256 i = 0; i < _attributes.length; i++) {
+            result[i] = _attributes[i].value;
+        }
+        return result;
+        //return _attributes;
     }
 
     function getFeeRecipients(uint256 id)
@@ -89,4 +129,14 @@ contract GhostmarketNFT is
             emit SecondarySaleFees(tokenId, recipients, bps);
         }
     }
+
+    /*     function saveAttribute(uint256 tokenId, Atrribute721Data memory data)
+        public
+    {
+        LibAttribute.Part[] storage attributes = attributes[data.tokenId];
+        //todo check sum is 10000
+        for (uint256 i = 0; i < data.attributes.length; i++) {
+            attributes.push(data.attributes[i]);
+        }
+    } */
 }

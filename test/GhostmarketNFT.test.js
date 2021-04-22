@@ -51,11 +51,33 @@ contract('GhostmarketNFT', async accounts => {
     expect(recipients[0]).to.equal(accounts[1]);
 
     const values = await this.GhostmarketNFT.getFeeBps(10);
+    console.log("fee values: ", values)
     expect(values.length).to.equal(1);
     expect(values[0]).to.be.bignumber.equal('100');
 
     //const tx = await testing.feesTest(10);
     //console.log("used gas", tx.receipt.gasUsed);
+  });
+
+  it.only("add properties", async function () {
+    //key and value should be a string
+    await this.GhostmarketNFT.setAttributes(11, [{ key: "bar", value: "1234" }])
+    const attributes = await this.GhostmarketNFT.getAttributes(11);
+    console.log("attributes:", attributes)
+    expect(attributes[11].key).to.be("bar");
+  });
+
+  it('emits an attributes set event', async function () {
+    const { logs } = await this.GhostmarketNFT.setAttributes(11, [{ key: "bar", value: "1234" }])
+    expectEvent.inLogs(logs, 'AttributesSet', {
+      tokenId: "11",
+      attributes: [['bar', '1234']]
+    });
+  });
+
+  it("get properties", async function () {
+    let attributes = await this.GhostmarketNFT.getAttributes(1)
+    //console.log(attributes)
   });
 });
 
