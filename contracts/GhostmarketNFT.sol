@@ -1,26 +1,33 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/presets/ERC721PresetMinterPauserAutoIdUpgradeable.sol";
 import "./LibAttribute.sol";
 
+/**
+ * @dev ERC721 token with minting, burning, pause, secondary sales royalitiy functions.
+ *
+ */
 contract GhostmarketNFT is
     Initializable,
     ERC721PresetMinterPauserAutoIdUpgradeable
 {
+    // struct for secondary sales fees
     struct Fee {
         address payable recipient;
         uint256 value;
     }
 
+    //nft attributes struct
     struct AttributesStruct {
         string key;
         string value;
     }
 
-    // tokenId => attributes
+    // tokenId => attributes array
     mapping(uint256 => AttributesStruct[]) public attribute;
 
-    // token id => fees
+    // tokenId => fees array
     mapping(uint256 => Fee[]) public fees;
 
     event SecondarySaleFees(
@@ -28,9 +35,9 @@ contract GhostmarketNFT is
         address[] recipients,
         uint256[] bps
     );
+
     event AttributesSet(uint256 tokenId, AttributesStruct[] attributes);
 
-    //name: "GhostmarketNFT" symbol: "GMNFT"
     function initialize(
         string memory name,
         string memory symbol,
@@ -40,6 +47,10 @@ contract GhostmarketNFT is
         __ERC721PresetMinterPauserAutoId_init_unchained(name, symbol, uri);
     }
 
+    /**
+     * @dev saves the nft tokens custom attributes to contract storage
+     * emits AttributesSet event
+     */
     function setAttributes(
         uint256 _tokenId,
         AttributesStruct[] memory _attributes
@@ -60,22 +71,26 @@ contract GhostmarketNFT is
         }
     }
 
-    function getAttributes(uint256 _token_id) public returns (string[] memory) {
-        AttributesStruct[] memory _attributes = attribute[_token_id];
-        string[] memory result = new string[](_attributes.length);
-        for (uint256 i = 0; i < _attributes.length; i++) {
-            result[i] = _attributes[i].value;
-        }
-        return result;
-        //return _attributes;
+    /**
+     * @dev get the nft token attributes with the tokenId
+     */
+    function getAttributes(uint256 _tokenId)
+        public
+        view
+        returns (AttributesStruct[] memory)
+    {
+        return attribute[_tokenId];
     }
 
-    function getFeeRecipients(uint256 id)
+    /**
+     * @dev get the "secondary sales"/royalities fee recepients with the tokenId
+     */
+    function getFeeRecipients(uint256 _tokenId)
         public
         view
         returns (address payable[] memory)
     {
-        Fee[] memory _fees = fees[id];
+        Fee[] memory _fees = fees[_tokenId];
         address payable[] memory result = new address payable[](_fees.length);
         for (uint256 i = 0; i < _fees.length; i++) {
             result[i] = _fees[i].recipient;
@@ -83,8 +98,15 @@ contract GhostmarketNFT is
         return result;
     }
 
-    function getFeeBps(uint256 id) public view returns (uint256[] memory) {
-        Fee[] memory _fees = fees[id];
+    /**
+     * @dev get the "secondary sales"/royalities fee basis points 10000 = 100% with the tokenId
+     */
+    function getFeeBps(uint256 _tokenId)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        Fee[] memory _fees = fees[_tokenId];
         uint256[] memory result = new uint256[](_fees.length);
         for (uint256 i = 0; i < _fees.length; i++) {
             result[i] = _fees[i].value;
@@ -92,51 +114,51 @@ contract GhostmarketNFT is
         return result;
     }
 
-    function saveFees(uint256 _id, Fee[] memory _fees) public {
+    /**
+     * @dev save the "secondary sales"/royalities fee for the nft
+     * fee basis points 10000 = 100%
+     */
+    function saveFees(uint256 _tokenId, Fee[] memory _fees) public {
         for (uint256 i = 0; i < _fees.length; i++) {
             require(
                 _fees[i].recipient != address(0x0),
                 "Recipient should be present"
             );
             require(_fees[i].value != 0, "Fee value should be positive");
-            fees[_id].push(_fees[i]);
+            fees[_tokenId].push(_fees[i]);
         }
     }
 
+    /**
+     * @dev change the recepient address of the "secondary sales"/royalities fee
+     */
     function updateAccount(
-        uint256 _id,
+        uint256 _tokenId,
         address _from,
         address _to
     ) public {
-        uint256 length = fees[_id].length;
+        uint256 length = fees[_tokenId].length;
         for (uint256 i = 0; i < length; i++) {
-            if (fees[_id][i].recipient == _from) {
-                fees[_id][i].recipient = payable(address(uint160(_to)));
+            if (fees[_tokenId][i].recipient == _from) {
+                fees[_tokenId][i].recipient = payable(address(uint160(_to)));
             }
         }
     }
 
+    /**
+     * @dev mint NFT and set fee
+     */
     function mint(
-        address to,
-        uint256 tokenId,
+        address _to,
+        uint256 _tokenId,
         Fee[] memory _fees
     ) public {
-        super._mint(to, tokenId);
+        super._mint(_to, _tokenId);
         address[] memory recipients = new address[](_fees.length);
         uint256[] memory bps = new uint256[](_fees.length);
-        saveFees(tokenId, _fees);
+        saveFees(_tokenId, _fees);
         if (_fees.length > 0) {
-            emit SecondarySaleFees(tokenId, recipients, bps);
+            emit SecondarySaleFees(_tokenId, recipients, bps);
         }
     }
-
-    /*     function saveAttribute(uint256 tokenId, Atrribute721Data memory data)
-        public
-    {
-        LibAttribute.Part[] storage attributes = attributes[data.tokenId];
-        //todo check sum is 10000
-        for (uint256 i = 0; i < data.attributes.length; i++) {
-            attributes.push(data.attributes[i]);
-        }
-    } */
 }
