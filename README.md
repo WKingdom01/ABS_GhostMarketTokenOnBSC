@@ -8,6 +8,18 @@ Upgradable ERC721 Contract.
 
 Using OpenZeppelin contracts.
 
+## *current hack solution*
+modified the ERC721PresetMinterPauserAutoIdUpgradeable contract of openzeppelin
+in order to get the current nft id from the internal counter function
+
+you need to run this script once: AFTER installing/updating node packeges and before compiling the contracts
+```
+sh hack.sh
+```
+### compiling contracts
+```
+truffle compile --all
+```
 ### Deploying Proxy
 
 Using Truffle to deploying Proxy
