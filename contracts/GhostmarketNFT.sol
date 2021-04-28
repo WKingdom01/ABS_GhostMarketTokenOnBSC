@@ -2,7 +2,6 @@
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/presets/ERC721PresetMinterPauserAutoIdUpgradeable.sol";
-import "./LibAttribute.sol";
 
 /**
  * @dev ERC721 token with minting, burning, pause, secondary sales royalitiy functions.
@@ -54,7 +53,7 @@ contract GhostmarketNFT is
     function setAttributes(
         uint256 _tokenId,
         AttributesStruct[] memory _attributes
-    ) public {
+    ) internal {
         for (uint256 i = 0; i < _attributes.length; i++) {
             require(
                 keccak256(abi.encodePacked(_attributes[i].key)) !=
@@ -118,25 +117,54 @@ contract GhostmarketNFT is
      * @dev save the "secondary sales"/royalities fee for the nft
      * fee basis points 10000 = 100%
      */
-    function saveFees(uint256 _tokenId, Fee[] memory _fees) public {
+    function saveFees(uint256 _tokenId, Fee[] memory _fees) internal {
+        require(
+            _exists(_tokenId),
+            "ERC721: approved query for nonexistent token"
+        );
         for (uint256 i = 0; i < _fees.length; i++) {
             require(
                 _fees[i].recipient != address(0x0),
                 "Recipient should be present"
             );
-            require(_fees[i].value != 0, "Fee value should be positive");
+            require(_fees[i].value > 0, "Fee value should be positive");
             fees[_tokenId].push(_fees[i]);
+        }
+    }
+
+    /**
+     * @dev change the "secondary sales"/royalities fee value for a specific recipient address 
+     */
+    function updateRecipientsFees(
+        uint256 _tokenId,
+        address _from,
+        uint256 _value
+    ) external {
+        require(
+            hasRole(MINTER_ROLE, _msgSender()),
+            "updating fee value is not allowed by this account"
+        );
+        require(_value > 0, "new Fee value should be positive");
+        Fee[] memory _fees = fees[_tokenId];
+        for (uint256 i = 0; i < _fees.length; i++) {
+            if (fees[_tokenId][i].recipient == _from) {
+                fees[_tokenId][i].value = _value;
+            }
         }
     }
 
     /**
      * @dev change the recepient address of the "secondary sales"/royalities fee
      */
-    function updateAccount(
+    function updateFeeAccount(
         uint256 _tokenId,
         address _from,
         address _to
-    ) public {
+    ) external {
+        require(
+            hasRole(MINTER_ROLE, _msgSender()),
+            "updating fee recepients is not allowed by this account"
+        );
         uint256 length = fees[_tokenId].length;
         for (uint256 i = 0; i < length; i++) {
             if (fees[_tokenId][i].recipient == _from) {
@@ -150,15 +178,20 @@ contract GhostmarketNFT is
      */
     function mint(
         address _to,
-        uint256 _tokenId,
-        Fee[] memory _fees
+        //uint256 _tokenId,
+        Fee[] memory _fees,
+        AttributesStruct[] memory _attributes
     ) public {
-        super._mint(_to, _tokenId);
+        mint(_to);
+        uint256 _tokenId = (getCurrentCounter() - 1);
         address[] memory recipients = new address[](_fees.length);
         uint256[] memory bps = new uint256[](_fees.length);
-        saveFees(_tokenId, _fees);
         if (_fees.length > 0) {
+            saveFees(_tokenId, _fees);
             emit SecondarySaleFees(_tokenId, recipients, bps);
+        }
+        if (_attributes.length > 0) {
+            setAttributes(_tokenId, _attributes);
         }
     }
 }
