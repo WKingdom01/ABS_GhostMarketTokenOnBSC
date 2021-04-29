@@ -36,6 +36,22 @@ contract GhostmarketNFT is
     );
 
     event AttributesSet(uint256 tokenId, AttributesStruct[] attributes);
+    event GhostmarketFeeAddressChanged(address newValue);
+    event GhostmarketFeeMultiplierChanged(uint256 newValue);
+    event GhostmarketMintFeeChanged(uint256 newValue);
+    event GhostmarketFeePaid(address sender, uint256 value);
+
+    // fee multiplier
+    uint256 public ghostmarketFeeMultiplier;
+
+    // minting fee
+    uint256 public ghostmarketMintingFee;
+
+    //address where the transfer fees will be sent
+    address payable public ghostmarketFeeAddress;
+
+    //Reentrancy
+    bool locked;
 
     function initialize(
         string memory name,
@@ -44,6 +60,7 @@ contract GhostmarketNFT is
     ) public override initializer {
         __ERC721_init_unchained(name, symbol);
         __ERC721PresetMinterPauserAutoId_init_unchained(name, symbol, uri);
+        locked = false;
     }
 
     /**
@@ -133,7 +150,7 @@ contract GhostmarketNFT is
     }
 
     /**
-     * @dev change the "secondary sales"/royalities fee value for a specific recipient address 
+     * @dev change the "secondary sales"/royalities fee value for a specific recipient address
      */
     function updateRecipientsFees(
         uint256 _tokenId,
@@ -178,7 +195,6 @@ contract GhostmarketNFT is
      */
     function mint(
         address _to,
-        //uint256 _tokenId,
         Fee[] memory _fees,
         AttributesStruct[] memory _attributes
     ) public {
@@ -193,5 +209,79 @@ contract GhostmarketNFT is
         if (_attributes.length > 0) {
             setAttributes(_tokenId, _attributes);
         }
+    }
+
+    function sendMintingFee() internal {
+        require(!locked, "Reentrant detected!");
+
+        locked = true;
+        uint256 feevalue = _calculateGhostmarketMintingFee();
+        (bool success, bytes memory transactionBytes) = ghostmarketFeeAddress.call{value: feevalue}("");
+        
+        require(success, "Transfer failed.");
+        locked = false;
+
+        emit GhostmarketFeePaid(msg.sender, feevalue);
+    }
+
+    function mintWithFee(
+        address _to,
+        Fee[] memory _fees,
+        AttributesStruct[] memory _attributes
+    ) external {
+        require(
+            ghostmarketFeeAddress != address(0),
+            "Ghostmarket minting Fee Address not set"
+        );
+        if (ghostmarketFeeMultiplier > 0) {
+            sendMintingFee();
+        }
+
+        mint(_to, _fees, _attributes);
+    }
+
+    /**
+     * @dev set the wallet address where fees will be collected
+     */
+    function setGhostmarketFeeAddress(address payable _ghostmarketFeeAddress)
+        public
+    {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
+            "Caller must have admin role to set minting fee address"
+        );
+
+        ghostmarketFeeAddress = _ghostmarketFeeAddress;
+        emit GhostmarketFeeAddressChanged(ghostmarketFeeAddress);
+    }
+
+    /**
+     * @dev sets the transfer fee multiplier
+     */
+    function setGhostmarketFeeMultiplier(uint256 _ghostmarketFeeMultiplier)
+        public
+    {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
+            "Caller must have admin role to set minting fee percent"
+        );
+        ghostmarketFeeMultiplier = _ghostmarketFeeMultiplier;
+        emit GhostmarketFeeMultiplierChanged(ghostmarketFeeMultiplier);
+    }
+
+    /**
+     * @dev sets the transfer fee multiplier
+     */
+    function setGhostmarketMintFee(uint256 _ghostmarketMintingFee) public {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
+            "Caller must have admin role to set minting fee percent"
+        );
+        ghostmarketMintingFee = _ghostmarketMintingFee;
+        emit GhostmarketMintFeeChanged(ghostmarketMintingFee);
+    }
+
+    function _calculateGhostmarketMintingFee() internal view returns (uint256) {
+        return ghostmarketMintingFee * ghostmarketFeeMultiplier;
     }
 }

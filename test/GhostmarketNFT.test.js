@@ -108,7 +108,7 @@ contract('GhostmarketNFT', async accounts => {
     const newFeeValue = 66
     const receipt = await this.GhostmarketNFT.mint(accounts[1], [{ recipient: accounts[1], value: 100 }], [{ key: "bar", value: "1234" }]);
     const tokenId = new BN(parseInt(await this.GhostmarketNFT.getCurrentCounter()) - 1)
-    
+
     await this.GhostmarketNFT.updateRecipientsFees(tokenId, accounts[1], newFeeValue);
 
     const values = await this.GhostmarketNFT.getFeeBps(tokenId);
@@ -116,6 +116,23 @@ contract('GhostmarketNFT', async accounts => {
     console.log("new fee value: ", values[0])
     expect(values[0]).to.be.bignumber.equal((newFeeValue).toString());
 
+  });
+
+  it.only("mint with fee", async function () {
+    const minter = accounts[1]
+    const feeAddress = accounts[2]
+    await this.GhostmarketNFT.setGhostmarketFeeAddress(feeAddress)
+    await this.GhostmarketNFT.setGhostmarketFeeMultiplier(1)
+    await this.GhostmarketNFT.setGhostmarketMintFee("100000000000000000")
+    console.log("ghostmarketFeeMultiplier: ",await this.GhostmarketNFT.ghostmarketFeeMultiplier)
+    console.log("ghostmarketMintingFee: ",await this.GhostmarketNFT.ghostmarketMintingFee)
+    console.log("ghostmarketFeeAddress: ",await this.GhostmarketNFT.ghostmarketFeeAddress)
+
+    const receipt = await this.GhostmarketNFT.mintWithFee(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }]);
+    const tokenId = new BN(parseInt(await this.GhostmarketNFT.getCurrentCounter()) - 1)
+
+    let balance = (await this.GhostmarketNFT.balanceOf(feeAddress)).toString();
+    assert.equal(balance, 100000000000000000);
   });
 
 });
