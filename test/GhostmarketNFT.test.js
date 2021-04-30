@@ -6,6 +6,7 @@ const {
   constants,    // Common constants, like the zero address and largest integers
   expectEvent,  // Assertions for emitted events
   expectRevert, // Assertions for transactions that should fail
+  ether
 } = require('@openzeppelin/test-helpers');
 
 const { ZERO_ADDRESS } = constants;
@@ -118,21 +119,57 @@ contract('GhostmarketNFT', async accounts => {
 
   });
 
-  it.only("mint with fee", async function () {
-    const minter = accounts[1]
-    const feeAddress = accounts[2]
-    await this.GhostmarketNFT.setGhostmarketFeeAddress(feeAddress)
-    await this.GhostmarketNFT.setGhostmarketFeeMultiplier(1)
-    await this.GhostmarketNFT.setGhostmarketMintFee("100000000000000000")
-    console.log("ghostmarketFeeMultiplier: ",await this.GhostmarketNFT.ghostmarketFeeMultiplier)
-    console.log("ghostmarketMintingFee: ",await this.GhostmarketNFT.ghostmarketMintingFee)
-    console.log("ghostmarketFeeAddress: ",await this.GhostmarketNFT.ghostmarketFeeAddress)
+  describe('mint with fee', function () {
 
-    const receipt = await this.GhostmarketNFT.mintWithFee(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }]);
-    const tokenId = new BN(parseInt(await this.GhostmarketNFT.getCurrentCounter()) - 1)
 
-    let balance = (await this.GhostmarketNFT.balanceOf(feeAddress)).toString();
-    assert.equal(balance, 100000000000000000);
+    it.only('reverts on zero-valued minting fees', async function () {
+      const minter = accounts[1]
+      const feeAddress = accounts[3]
+      const value = ether('0');
+      await this.GhostmarketNFT.setGhostmarketFeeAddress(feeAddress)
+      await this.GhostmarketNFT.setGhostmarketFeeMultiplier(1)
+      await this.GhostmarketNFT.setGhostmarketMintFee(value)
+      await expectRevert(
+        this.GhostmarketNFT.mintWithFee(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }], { value: value }),
+        'Ghostmarket minting Fee is zero'
+      );
+    });
+
+    it.only('requires a non-null beneficiary address', async function () {
+      const minter = accounts[1]
+      const feeAddress = accounts[3]
+      const value = ether('0.1');
+      await this.GhostmarketNFT.setGhostmarketFeeAddress(ZERO_ADDRESS)
+      await this.GhostmarketNFT.setGhostmarketFeeMultiplier(1)
+      await this.GhostmarketNFT.setGhostmarketMintFee(value)
+      await expectRevert(
+        this.GhostmarketNFT.mintWithFee(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }], { value: value }),
+        'Ghostmarket minting Fee Address not set'
+      );
+    });
+
+    it('should accept payments', async function () {
+      const minter = accounts[1]
+      const feeAddress = accounts[3]
+      const value = ether('0.1');
+      await this.GhostmarketNFT.setGhostmarketFeeAddress(feeAddress)
+      await this.GhostmarketNFT.setGhostmarketFeeMultiplier(1)
+      await this.GhostmarketNFT.setGhostmarketMintFee(value)
+      let feeAddressEthBalanceBefore = await web3.eth.getBalance(feeAddress)
+
+      console.log("ghostmarketFeeMultiplier: ", await this.GhostmarketNFT.ghostmarketFeeMultiplier())
+      console.log("ghostmarketMintingFee: ", await this.GhostmarketNFT.ghostmarketMintingFee())
+      console.log("ghostmarketFeeAddress: ", await this.GhostmarketNFT.ghostmarketFeeAddress())
+      await this.GhostmarketNFT.mintWithFee(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }], { value: value })
+      let feeAddressEthBalanceAfter = await web3.eth.getBalance(feeAddress)
+      console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
+      console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
+      expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore) + parseInt(value))
+
+    });
+
   });
+
+
 
 });
