@@ -30,6 +30,9 @@ contract GhostmarketNFT is
     // tokenId => fees array
     mapping(uint256 => Fee[]) public fees;
 
+    // tokenId => locked content string
+    mapping(uint256 => string) public _lockedContent;
+
     event SecondarySaleFees(
         uint256 tokenId,
         address[] recipients,
@@ -116,7 +119,8 @@ contract GhostmarketNFT is
     }
 
     /**
-     * @dev get the "secondary sales"/royalities fee basis points 10000 = 100% with the tokenId
+     * @dev get the "secondary sales"/royalities fee for the NFT id
+     * fee basis points 10000 = 100%
      */
     function getFeeBps(uint256 _tokenId)
         public
@@ -132,7 +136,7 @@ contract GhostmarketNFT is
     }
 
     /**
-     * @dev save the "secondary sales"/royalities fee for the nft
+     * @dev save the "secondary sales"/royalities fee for the NFT id
      * fee basis points 10000 = 100%
      */
     function saveFees(uint256 _tokenId, Fee[] memory _fees) internal {
@@ -197,7 +201,8 @@ contract GhostmarketNFT is
     function mint(
         address _to,
         Fee[] memory _fees,
-        AttributesStruct[] memory _attributes
+        AttributesStruct[] memory _attributes,
+        string memory lockedcontent
     ) public {
         mint(_to);
         uint256 _tokenId = (getCurrentCounter() - 1);
@@ -210,6 +215,12 @@ contract GhostmarketNFT is
         if (_attributes.length > 0) {
             setAttributes(_tokenId, _attributes);
         }
+        if (
+            keccak256(abi.encodePacked(lockedcontent)) !=
+            keccak256(abi.encodePacked(""))
+        ) {
+            setLockedContent(_tokenId, lockedcontent);
+        }
     }
 
     /**
@@ -218,7 +229,8 @@ contract GhostmarketNFT is
     function mintWithFee(
         address _to,
         Fee[] memory _fees,
-        AttributesStruct[] memory _attributes
+        AttributesStruct[] memory _attributes,
+        string memory lockedcontent
     ) public payable {
         if (_ghostmarketFeeMultiplier > 0) {
             require(
@@ -232,7 +244,7 @@ contract GhostmarketNFT is
             _sendMintingFee();
         }
 
-        mint(_to, _fees, _attributes);
+        mint(_to, _fees, _attributes, lockedcontent);
     }
 
     /**
@@ -243,8 +255,7 @@ contract GhostmarketNFT is
         locked = true;
         uint256 feevalue = _calculateGhostmarketMintingFee();
 
-        (bool success, ) =
-            _ghostmarketFeeAddress.call{value: feevalue}("");
+        (bool success, ) = _ghostmarketFeeAddress.call{value: feevalue}("");
         require(success, "Transfer failed.");
         locked = false;
         emit GhostmarketFeePaid(msg.sender, feevalue);
@@ -253,9 +264,7 @@ contract GhostmarketNFT is
     /**
      * @dev set the wallet address where fees will be collected
      */
-    function setGhostmarketFeeAddress(address payable gmfa)
-        public
-    {
+    function setGhostmarketFeeAddress(address payable gmfa) public {
         require(
             hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
             "Caller must have admin role to set minting fee address"
@@ -268,9 +277,7 @@ contract GhostmarketNFT is
     /**
      * @dev sets the transfer fee multiplier
      */
-    function setGhostmarketFeeMultiplier(uint256 gmfm)
-        public
-    {
+    function setGhostmarketFeeMultiplier(uint256 gmfm) public {
         require(
             hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
             "Caller must have admin role to set minting fee percent"
@@ -312,7 +319,28 @@ contract GhostmarketNFT is
         return _ghostmarketFeeMultiplier;
     }
 
+    /**
+     * @return the the calculated fee for minting.
+     */
     function _calculateGhostmarketMintingFee() internal view returns (uint256) {
         return _ghostmarketMintingFee * _ghostmarketFeeMultiplier;
+    }
+
+    function setLockedContent(uint256 _tokenId, string memory content)
+        internal
+    {
+        _lockedContent[_tokenId] = content;
+    }
+
+    function getLockedContent(uint256 _tokenId)
+        public
+        view
+        returns (string memory)
+    {
+        require(
+            ownerOf(_tokenId) == msg.sender,
+            "Caller must be the owner of the NFT"
+        );
+        return _lockedContent[_tokenId];
     }
 }
