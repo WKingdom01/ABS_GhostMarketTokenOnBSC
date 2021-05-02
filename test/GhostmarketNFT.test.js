@@ -166,19 +166,30 @@ contract('GhostmarketNFT', async accounts => {
     });
   });
 
-  it("should set and get locked content for nft", async function () {
-    const minter = accounts[0]
+  it.only("should set and get locked content for nft", async function () {
+    const nftReceiver = accounts[5]
     const hiddencontent = "top secret"
-    await this.GhostmarketNFT.mint(minter, [], [], hiddencontent);
+    const mintResult = await this.GhostmarketNFT.mint(nftReceiver, [], [], hiddencontent);
+    //console.log("mintResult: ", mintResult)
     const tokenId = new BN(parseInt(await this.GhostmarketNFT.getCurrentCounter()) - 1)
 
     console.log("token owner address: ", await this.GhostmarketNFT.ownerOf(tokenId))
+    const { logs } = await this.GhostmarketNFT.getLockedContent.sendTransaction(tokenId, { from: nftReceiver })
 
-    expect(await this.GhostmarketNFT.getLockedContent(tokenId)).to.equal(hiddencontent);
+    //const { logs } = await this.GhostmarketNFT.getLockedContent(tokenId)
+    
+    //console.log("result: ", result)
+
+    expectEvent.inLogs(logs, 'LockedContentViewed', {
+      msgSender: nftReceiver,
+      tokenId: tokenId,
+      lockedContent: hiddencontent,
+    });
+
 
   });
 
-  it("should fetch locked content for token owner", async function () {
+  it("should revert if other then token owner tries to fetch locked content", async function () {
     const tokenReceiver = accounts[1]
     const hiddencontent = "top secret"
     await this.GhostmarketNFT.mint(tokenReceiver, [], [], hiddencontent)
@@ -187,5 +198,27 @@ contract('GhostmarketNFT', async accounts => {
     await expectRevert(this.GhostmarketNFT.getLockedContent(tokenId),
       "Caller must be the owner of the NFT"
     );
+  });
+
+  it("should increment locked content view count", async function () {
+    const tokenReceiver = accounts[0]
+    const hiddencontent = "top secret"
+    await this.GhostmarketNFT.mint(tokenReceiver, [], [], hiddencontent)
+    const tokenId = new BN(parseInt(await this.GhostmarketNFT.getCurrentCounter()) - 1)
+
+    const currentCounter = await this.GhostmarketNFT.getCurrentLockedContentViewTracker(tokenId)
+    // call two times the getLockedContent function, counter should increment by 2
+    await this.GhostmarketNFT.getLockedContent(tokenId)
+    await this.GhostmarketNFT.getLockedContent(tokenId)
+    expect(await this.GhostmarketNFT.getCurrentLockedContentViewTracker(tokenId)).to.be.bignumber.equal((currentCounter + 2).toString());
+
+    //another NFT
+    await this.GhostmarketNFT.mint(tokenReceiver, [], [], "top secret2")
+    const tokenId2 = new BN(parseInt(await this.GhostmarketNFT.getCurrentCounter()) - 1)
+    const currentCounter2 = await this.GhostmarketNFT.getCurrentLockedContentViewTracker(tokenId2)
+    await this.GhostmarketNFT.getLockedContent(tokenId2)
+    expect(await this.GhostmarketNFT.getCurrentLockedContentViewTracker(tokenId2)).to.be.bignumber.equal((currentCounter2 + 1).toString());
+
+
   });
 });

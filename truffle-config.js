@@ -4,6 +4,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const {
   LOCAL_PRIVATE_KEYS,
+  LOCAL_TEST_MNEMONIC,
   BSC_MAINNET_PRIVATE_KEY,
   BSC_TESTNET_PRIVATE_KEY } = require('./.secrets.json');
 /**
@@ -54,13 +55,12 @@ module.exports = {
     test: {
       provider: function () {
         return new HDWalletProvider({
-          privateKeys: LOCAL_PRIVATE_KEYS,
+          mnemonic: LOCAL_TEST_MNEMONIC,
           providerOrUrl: "http://127.0.0.1:8545",
-          addressIndex: 0,
-          numberOfAddresses: 1
+          network_id: "*"
         })
       },
-      network_id: 2017,
+      network_id: "*",
       skipDryRun: false
     },
     rinkeby: {

@@ -3,6 +3,7 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/presets/ERC721PresetMinterPauserAutoIdUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 /**
  * @dev ERC721 token with minting, burning, pause, secondary sales royalitiy functions.
@@ -32,11 +33,19 @@ contract GhostmarketNFT is
 
     // tokenId => locked content string
     mapping(uint256 => string) public _lockedContent;
+    // tokenId => locked content view counter
+    mapping(uint256 => uint256) private _lockedContentViewTracker;
 
     event SecondarySaleFees(
         uint256 tokenId,
         address[] recipients,
         uint256[] bps
+    );
+
+    event LockedContentViewed(
+        address msgSender,
+        uint256 tokenId,
+        string lockedContent
     );
 
     event AttributesSet(uint256 tokenId, AttributesStruct[] attributes);
@@ -54,7 +63,7 @@ contract GhostmarketNFT is
     //address where the transfer fees will be sent
     address payable private _ghostmarketFeeAddress;
 
-    //Reentrancy
+    //Reentrancy lock checker
     bool locked;
 
     function initialize(
@@ -320,27 +329,60 @@ contract GhostmarketNFT is
     }
 
     /**
-     * @return the the calculated fee for minting.
+     * @return the calculated fee for minting a NFT.
      */
     function _calculateGhostmarketMintingFee() internal view returns (uint256) {
         return _ghostmarketMintingFee * _ghostmarketFeeMultiplier;
     }
 
+    /**
+     * @dev save locked content as string for a specific _tokenId.
+     */
     function setLockedContent(uint256 _tokenId, string memory content)
         internal
     {
         _lockedContent[_tokenId] = content;
     }
 
-    function getLockedContent(uint256 _tokenId)
-        public
-        view
-        returns (string memory)
-    {
+    /**
+     * @dev emits event
+     * example event:
+     * msgSender: 0x1a1122c2483e8f988F9a800F3A6eE316dB77e4e0 (type: address),
+     * tokenId: 0 (type: uint256),
+     * lockedContent: 'top secret' (type: string)
+     */
+    function getLockedContent(uint256 _tokenId) public returns (string memory) {
         require(
             ownerOf(_tokenId) == msg.sender,
             "Caller must be the owner of the NFT"
         );
-        return _lockedContent[_tokenId];
+        _incrementCurrentLockedContentViewTracker(_tokenId);
+        emit LockedContentViewed(
+            msg.sender,
+            _tokenId,
+            _lockedContent[_tokenId]
+        );
+    }
+
+    /**
+     * @dev increment locked content view tracker
+     */
+    function _incrementCurrentLockedContentViewTracker(uint256 _tokenId)
+        private
+    {
+        _lockedContentViewTracker[_tokenId] =
+            _lockedContentViewTracker[_tokenId] +
+            1;
+    }
+
+    /**
+     * @dev get the durrent locked content view tracker for specific _tokenId
+     */
+    function getCurrentLockedContentViewTracker(uint256 _tokenId)
+        public
+        view
+        returns (uint256)
+    {
+        return _lockedContentViewTracker[_tokenId];
     }
 }
