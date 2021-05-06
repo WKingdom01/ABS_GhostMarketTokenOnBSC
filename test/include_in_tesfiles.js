@@ -1,4 +1,5 @@
 const GhostmarketERC721 = artifacts.require("GhostmarketERC721");
+const GhostmarketERC1155 = artifacts.require("GhostmarketERC1155");
 const TOKEN_NAME = "Ghostmarket NFT"
 const TOKEN_SYMBOL = "GMNFT"
 const TOKEN_URI = "my.app/"
@@ -7,6 +8,7 @@ const PAUSER_ROLE = "0x65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f33766734
 
 exports._t_c = {
   GhostmarketERC721: GhostmarketERC721,
+  GhostmarketERC1155: GhostmarketERC1155,
   TOKEN_NAME: TOKEN_NAME,
   TOKEN_SYMBOL: TOKEN_SYMBOL,
   TOKEN_URI: TOKEN_URI
