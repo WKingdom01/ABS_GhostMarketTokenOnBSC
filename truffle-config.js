@@ -3,8 +3,10 @@ const web3 = require('web3');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const {
+  INFURA_PROJECT_ID,
   LOCAL_PRIVATE_KEYS,
   LOCAL_TEST_MNEMONIC,
+  RINKEBY_PRIVATE_KEYS,
   BSC_MAINNET_PRIVATE_KEY,
   BSC_TESTNET_PRIVATE_KEY } = require('./.secrets.json');
 /**
@@ -91,7 +93,7 @@ module.exports = {
       provider: function () {
         return new HDWalletProvider(
           BSC_TESTNET_PRIVATE_KEY,
-          "https://data-seed-prebsc-1-s1.binance.org:8545"
+          "https://data-seed-prebsc-2-s1.binance.org:8545/"
         );
       },
       network_id: "*",
