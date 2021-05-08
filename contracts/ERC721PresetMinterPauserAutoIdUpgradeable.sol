@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-import "../ERC721Upgradeable.sol";
-import "../extensions/ERC721EnumerableUpgradeable.sol";
-import "../extensions/ERC721BurnableUpgradeable.sol";
-import "../extensions/ERC721PausableUpgradeable.sol";
-import "../../../access/AccessControlEnumerableUpgradeable.sol";
-import "../../../utils/ContextUpgradeable.sol";
-import "../../../utils/CountersUpgradeable.sol";
-import "../../../proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @dev {ERC721} token, including:
