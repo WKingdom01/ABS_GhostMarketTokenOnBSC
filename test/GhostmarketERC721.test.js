@@ -15,6 +15,11 @@ var my_constants = require('./include_in_tesfiles.js')
 
 // Start test block
 contract('GhostmarketERC721', async accounts => {
+  const [minter, transferToAccount, royalitiesAccount, mintingFeeAccount] = accounts;
+  console.log('minter: ', minter);
+  console.log('transferToAccount: ', transferToAccount);
+  console.log('royalitiesAccount: ', royalitiesAccount);
+  console.log('mintingFeeAccount: ', mintingFeeAccount);
   before(async function () {
     // Deploy a new contract before the tests
     this.GhostmarketERC721 = await deployProxy(
@@ -32,14 +37,21 @@ contract('GhostmarketERC721', async accounts => {
     expect((await this.GhostmarketERC721.symbol()).toString()).to.equal(my_constants._t_c.TOKEN_SYMBOL);
   });
 
+  it('should mint tokens', async function () {
+    await this.GhostmarketERC721.mint(minter, [], [], "")
+    expect(await this.GhostmarketERC721.balanceOf(minter)).to.be.bignumber.equal('1');
+    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
+    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
+  });
+
   it('deployer can mint tokens with royalitiy fees and attributes', async function () {
     const tokenId = new BN('0');
 
-    const receipt = await this.GhostmarketERC721.mint(accounts[1], [{ recipient: accounts[1], value: 100 }], [{ key: "bar", value: "1234" }, { key: "baz", value: "strong" }], "");
-    expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: accounts[1], tokenId });
+    const receipt = await this.GhostmarketERC721.mint(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }, { key: "baz", value: "strong" }], "");
+    expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
 
-    expect(await this.GhostmarketERC721.balanceOf(accounts[1])).to.be.bignumber.equal('1');
-    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(accounts[1]);
+    expect(await this.GhostmarketERC721.balanceOf(minter)).to.be.bignumber.equal('1');
+    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
 
     expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.TOKEN_URI + tokenId);
 
@@ -56,17 +68,15 @@ contract('GhostmarketERC721', async accounts => {
   });
 
   it('deployer can mint tokens WITHOUT royalitiy fees and attributes', async function () {
-    const minter_account = accounts[5];
-
-    const receipt = await this.GhostmarketERC721.mint(minter_account, [], [], "");
+    const receipt = await this.GhostmarketERC721.mint(minter, [], [], "");
 
     const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
     console.log("tokenId: ", tokenId)
 
-    expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter_account, tokenId });
+    expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
 
-    expect(await this.GhostmarketERC721.balanceOf(minter_account)).to.be.bignumber.equal('1');
-    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter_account);
+    expect(await this.GhostmarketERC721.balanceOf(minter)).to.be.bignumber.equal('1');
+    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
 
     expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.TOKEN_URI + tokenId);
 
@@ -77,8 +87,6 @@ contract('GhostmarketERC721', async accounts => {
     const attributes = await this.GhostmarketERC721.getAttributes(tokenId);
     console.log("attributes : ", attributes)
     expect(attributes).to.be.empty;
-
-
   });
 
   it('non minter cannot mint', async function () {
@@ -102,7 +110,6 @@ contract('GhostmarketERC721', async accounts => {
     const recipients = await this.GhostmarketERC721.getFeeRecipients(tokenId)
     expect(recipients.length).to.equal(1)
     expect(recipients[0]).to.equal(feeRecepient)
-
   });
 
   it("allows to update royalities/secondary-sales fee value for specific account", async function () {
@@ -146,20 +153,33 @@ contract('GhostmarketERC721', async accounts => {
       );
     });
 
-    it('should accept payments', async function () {
-      const minter = accounts[1]
-      const feeAddress = accounts[3]
+    it('should mint without setting Ghostmarket Fee Multiplier', async function () {
       const value = ether('0.1');
-      await this.GhostmarketERC721.setGhostmarketFeeAddress(feeAddress)
-      await this.GhostmarketERC721.setGhostmarketFeeMultiplier(1)
-      await this.GhostmarketERC721.setGhostmarketMintFee(value)
-      let feeAddressEthBalanceBefore = await web3.eth.getBalance(feeAddress)
+      let feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
 
       console.log("ghostmarketFeeMultiplier: ", await this.GhostmarketERC721.ghostmarketFeeMultiplier())
       console.log("ghostmarketMintingFee: ", await this.GhostmarketERC721.ghostmarketMintingFee())
       console.log("ghostmarketFeeAddress: ", await this.GhostmarketERC721.ghostmarketFeeAddress())
       await this.GhostmarketERC721.mintWithFee(minter, [], [], "", { value: value })
-      let feeAddressEthBalanceAfter = await web3.eth.getBalance(feeAddress)
+      let feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
+      console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
+      console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
+      expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore))
+    });
+
+
+    it('mintWithFee should accept payments', async function () {
+      const value = ether('0.1');
+      await this.GhostmarketERC721.setGhostmarketFeeAddress(mintingFeeAccount)
+      await this.GhostmarketERC721.setGhostmarketFeeMultiplier(1)
+      await this.GhostmarketERC721.setGhostmarketMintFee(value)
+      let feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
+
+      console.log("ghostmarketFeeMultiplier: ", await this.GhostmarketERC721.ghostmarketFeeMultiplier())
+      console.log("ghostmarketMintingFee: ", await this.GhostmarketERC721.ghostmarketMintingFee())
+      console.log("ghostmarketFeeAddress: ", await this.GhostmarketERC721.ghostmarketFeeAddress())
+      await this.GhostmarketERC721.mintWithFee(minter, [], [], "", { value: value })
+      let feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
       expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore) + parseInt(value))
@@ -176,17 +196,11 @@ contract('GhostmarketERC721', async accounts => {
     console.log("token owner address: ", await this.GhostmarketERC721.ownerOf(tokenId))
     const { logs } = await this.GhostmarketERC721.getLockedContent.sendTransaction(tokenId, { from: nftReceiver })
 
-    //const { logs } = await this.GhostmarketERC721.getLockedContent(tokenId)
-
-    //console.log("result: ", result)
-
     expectEvent.inLogs(logs, 'LockedContentViewed', {
       msgSender: nftReceiver,
       tokenId: tokenId,
       lockedContent: hiddencontent,
     });
-
-
   });
 
   it("should revert if other then token owner tries to fetch locked content", async function () {
@@ -218,7 +232,5 @@ contract('GhostmarketERC721', async accounts => {
     const currentCounter2 = await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId2)
     await this.GhostmarketERC721.getLockedContent(tokenId2)
     expect(await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId2)).to.be.bignumber.equal((currentCounter2 + 1).toString());
-
-
   });
 });

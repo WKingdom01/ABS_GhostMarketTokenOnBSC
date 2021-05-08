@@ -3,6 +3,8 @@ const web3 = require('web3');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const {
+  INFURA_PROJECT_ID,
+  RINKEBY_PRIVATE_KEYS,
   LOCAL_PRIVATE_KEYS,
   LOCAL_TEST_MNEMONIC,
   BSC_MAINNET_PRIVATE_KEY,
