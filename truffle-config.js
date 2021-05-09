@@ -4,6 +4,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const {
   INFURA_PROJECT_ID,
+  RINKEBY_PRIVATE_KEYS,
   LOCAL_PRIVATE_KEYS,
   LOCAL_TEST_MNEMONIC,
   RINKEBY_PRIVATE_KEYS,

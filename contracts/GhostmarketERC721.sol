@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/presets/ERC721PresetMinterPauserAutoIdUpgradeable.sol";
+import "./ERC721PresetMinterPauserAutoIdUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 /**
  * @dev ERC721 token with minting, burning, pause, secondary sales royalitiy functions.
  *
  */
-contract GhostmarketNFT is
+contract GhostmarketERC721 is
     Initializable,
     ERC721PresetMinterPauserAutoIdUpgradeable
 {
@@ -345,7 +344,8 @@ contract GhostmarketNFT is
     }
 
     /**
-     * @dev emits event
+     * @dev locked content for a NFT can be retrived only by emitting an event
+     *
      * example event:
      * msgSender: 0x1a1122c2483e8f988F9a800F3A6eE316dB77e4e0 (type: address),
      * tokenId: 0 (type: uint256),
