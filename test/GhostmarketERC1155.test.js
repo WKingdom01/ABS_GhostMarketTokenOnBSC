@@ -208,7 +208,7 @@ contract('GhostmarketERC1155', async accounts => {
       );
     });
 
-    it('should accept payments', async function () {
+    it.only('should accept payments', async function () {
       const royalities = [{ recipient: royalitiesAccount, value: 50 }]
       const ghostmarketFeeMultiplier = 1
       const value = ether('0.1');

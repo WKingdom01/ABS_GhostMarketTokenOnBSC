@@ -37,111 +37,90 @@ contract('GhostmarketERC721', async accounts => {
     expect((await this.GhostmarketERC721.symbol()).toString()).to.equal(my_constants._t_c.TOKEN_SYMBOL);
   });
 
-  it('should mint tokens', async function () {
-    await this.GhostmarketERC721.mint(minter, [], [], "")
-    expect(await this.GhostmarketERC721.balanceOf(minter)).to.be.bignumber.equal('1');
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
-    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
-  });
-
-  it('deployer can mint tokens with royalitiy fees and attributes', async function () {
-    const minterAccountNFTbalance = parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())
-    console.log("minter account NFT balance: ", minterAccountNFTbalance)
-    const receipt = await this.GhostmarketERC721.mint(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }, { key: "baz", value: "strong" }], "");
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
-
-    expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
-
-    expect(parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())).to.equal(minterAccountNFTbalance + 1);
-    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
-
+  it("should have base uri + token uri ", async function () {
+    await this.GhostmarketERC721.mintGhost(minter, [], "", "")
+    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
     expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.TOKEN_URI + tokenId);
-
-    const values = await this.GhostmarketERC721.getFeeBps(tokenId);
-    expect(values.length).to.equal(1);
-    expect(values[0]).to.be.bignumber.equal('100');
-
-    const attributes = await this.GhostmarketERC721.getAttributes(tokenId);
-    expect(attributes[0].key).to.equal("bar");
-    expect(attributes[0].value).to.equal("1234");
-    expect(attributes[1].key).to.equal("baz");
-    expect(attributes[1].value).to.equal("strong");
-
   });
 
-  it('deployer can mint tokens WITHOUT royalitiy fees and attributes', async function () {
 
-    const minterAccountNFTbalance = parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())
-    console.log("minter account NFT balance: ", minterAccountNFTbalance)
-    const receipt = await this.GhostmarketERC721.mint(minter, [], [], "");
+  describe('mint NFT', function () {
+    const value = ether('0.1')
 
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
-    console.log("tokenId: ", tokenId)
+    it('should mint tokens, nft owner = contract deployer', async function () {
+      result = await this.GhostmarketERC721.mintGhost(minter, [], "", "")
+      expect(await this.GhostmarketERC721.balanceOf(minter)).to.be.bignumber.equal('1')
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+      expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter)
+      const tokenURI = await this.GhostmarketERC721.tokenURI(tokenId)
+      expectEvent(result, 'Minted', { toAddress: minter, tokenId: tokenId, tokenURI: tokenURI })
 
-    expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
 
-    expect(parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())).to.equal(minterAccountNFTbalance + 1);
-    expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
+    });
 
-    expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.TOKEN_URI + tokenId);
+    it('should mint tokens, nft owner = transferToAccount', async function () {
+      await this.GhostmarketERC721.mintGhost(transferToAccount, [], "", "")
+      expect(await this.GhostmarketERC721.balanceOf(transferToAccount)).to.be.bignumber.equal('1')
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+      expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(transferToAccount)
+    });
 
-    const values = await this.GhostmarketERC721.getFeeBps(tokenId);
-    console.log("royalitiy fee values: ", values)
-    expect(values).to.be.empty;
+    it('should mint tokens with royalitiy fees', async function () {
 
-    const attributes = await this.GhostmarketERC721.getAttributes(tokenId);
-    console.log("attributes : ", attributes)
-    expect(attributes).to.be.empty;
+      const minterAccountNFTbalance = parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())
+      console.log("minter account NFT balance: ", minterAccountNFTbalance)
+      const receipt = await this.GhostmarketERC721.mintGhost(minter, [{ recipient: minter, value: 100 }], "", "");
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+
+      expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
+
+      expect(parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())).to.equal(minterAccountNFTbalance + 1);
+      expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
+
+
+      const values = await this.GhostmarketERC721.getFeeBps(tokenId);
+      expect(values.length).to.equal(1);
+      expect(values[0]).to.be.bignumber.equal('100');
+
+    });
+
+    it('should mint tokens WITHOUT royalitiy fees', async function () {
+
+      const minterAccountNFTbalance = parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())
+      console.log("minter account NFT balance: ", minterAccountNFTbalance)
+      const receipt = await this.GhostmarketERC721.mintGhost(minter, [], "", "");
+
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+      console.log("tokenId: ", tokenId)
+
+      expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
+
+      expect(parseInt((await this.GhostmarketERC721.balanceOf(minter)).toString())).to.equal(minterAccountNFTbalance + 1);
+      expect(await this.GhostmarketERC721.ownerOf(tokenId)).to.equal(minter);
+
+      const values = await this.GhostmarketERC721.getFeeBps(tokenId);
+      console.log("royalitiy fee values: ", values)
+      expect(values).to.be.empty;
+    });
+
+    it('everybody can mint', async function () {
+      this.GhostmarketERC721.mintGhost(transferToAccount, [], "", "", { from: mintingFeeAccount })
+    });
   });
 
-  it('non minter cannot mint', async function () {
-    // Test a transaction reverts
-    await expectRevert(
-      this.GhostmarketERC721.mint(accounts[2], [{ recipient: accounts[2], value: 100 }], [{ key: "bar", value: "1234" }], "", { from: accounts[3] }),
-      'ERC721PresetMinterPauserAutoId: must have minter role to mint'
-    );
-  });
-
-  it("allows to update royalities/secondary-sales fee recipient", async function () {
-    const feeRecepient = accounts[3]
-    console.log("minter account: ", minter)
-    console.log("new recipients account: ", feeRecepient)
-    const receipt = await this.GhostmarketERC721.mint(minter, [{ recipient: minter, value: 100 }], [{ key: "bar", value: "1234" }], "")
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
-
-    await this.GhostmarketERC721.updateFeeAccount(tokenId, minter, feeRecepient)
-
-    const recipients = await this.GhostmarketERC721.getFeeRecipients(tokenId)
-    expect(recipients.length).to.equal(1)
-    expect(recipients[0]).to.equal(feeRecepient)
-  });
-
-  it("allows to update royalities/secondary-sales fee value for specific account", async function () {
-    const newFeeValue = 66
-    const receipt = await this.GhostmarketERC721.mint(accounts[1], [{ recipient: accounts[1], value: 100 }], [{ key: "bar", value: "1234" }], "");
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
-
-    await this.GhostmarketERC721.updateRecipientsFees(tokenId, accounts[1], newFeeValue);
-
-    const values = await this.GhostmarketERC721.getFeeBps(tokenId);
-    expect(values.length).to.equal(1);
-    console.log("new fee value: ", values[0])
-    expect(values[0]).to.be.bignumber.equal((newFeeValue).toString());
-
-  });
-
-  describe('should mint NFT with fee', function () {
-    it('reverts on zero-valued minting fees', async function () {
-      const minter = accounts[1]
-      const feeAddress = accounts[3]
+  describe('mint NFT with fee', function () {
+    it('should mint without fees', async function () {
       const value = ether('0');
-      await this.GhostmarketERC721.setGhostmarketFeeAddress(feeAddress)
-      await this.GhostmarketERC721.setGhostmarketFeeMultiplier(1)
+      const feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
+
+      await this.GhostmarketERC721.setGhostmarketFeeAddress(mintingFeeAccount)
       await this.GhostmarketERC721.setGhostmarketMintFee(value)
-      await expectRevert(
-        this.GhostmarketERC721.mintWithFee(minter, [], [], "", { value: value }),
-        'Ghostmarket minting Fee is zero'
-      );
+
+      this.GhostmarketERC721.mintGhost(minter, [], "", "")
+      const feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
+      expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore))
+
+
     });
 
     it('should requires a non-null minting fee address', async function () {
@@ -149,93 +128,71 @@ contract('GhostmarketERC721', async accounts => {
       const feeAddress = accounts[3]
       const value = ether('0.1');
       await this.GhostmarketERC721.setGhostmarketFeeAddress(ZERO_ADDRESS)
-      await this.GhostmarketERC721.setGhostmarketFeeMultiplier(1)
       await this.GhostmarketERC721.setGhostmarketMintFee(value)
       await expectRevert(
-        this.GhostmarketERC721.mintWithFee(minter, [], [], "", { value: value }),
+        this.GhostmarketERC721.mintGhost(minter, [], "", ""),
         'Ghostmarket minting Fee Address not set'
       );
     });
 
-    it('should mint without setting (or eqaul 0) Ghostmarket Fee Multiplier', async function () {
-      const value = ether('0.1');
-      let feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
-      await this.GhostmarketERC721.setGhostmarketFeeMultiplier(0)
-
-      console.log("ghostmarketFeeMultiplier: ", await this.GhostmarketERC721.ghostmarketFeeMultiplier())
-      console.log("ghostmarketMintingFee: ", await this.GhostmarketERC721.ghostmarketMintingFee())
-      console.log("ghostmarketFeeAddress: ", await this.GhostmarketERC721.ghostmarketFeeAddress())
-      await this.GhostmarketERC721.mintWithFee(minter, [], [], "", { value: value })
-      let feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
-      console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
-      console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
-      expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore))
-    });
-
-
-    it('mintWithFee should accept payments', async function () {
+    it('should send fee to mintingFeeAccount', async function () {
       const value = ether('0.1');
       await this.GhostmarketERC721.setGhostmarketFeeAddress(mintingFeeAccount)
-      await this.GhostmarketERC721.setGhostmarketFeeMultiplier(1)
       await this.GhostmarketERC721.setGhostmarketMintFee(value)
-      let feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
+      const feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
 
-      console.log("ghostmarketFeeMultiplier: ", await this.GhostmarketERC721.ghostmarketFeeMultiplier())
-      console.log("ghostmarketMintingFee: ", await this.GhostmarketERC721.ghostmarketMintingFee())
-      console.log("ghostmarketFeeAddress: ", await this.GhostmarketERC721.ghostmarketFeeAddress())
-      await this.GhostmarketERC721.mintWithFee(minter, [], [], "", { value: value })
-      let feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
+      this.GhostmarketERC721.mintGhost(minter, [], "", "", { value: value })
+      const feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
       expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore) + parseInt(value))
     });
   });
 
-  it("should set and get locked content for nft", async function () {
-    const nftReceiver = accounts[5]
+  describe('locked content', function () {
     const hiddencontent = "top secret"
-    const mintResult = await this.GhostmarketERC721.mint(nftReceiver, [], [], hiddencontent);
-    //console.log("mintResult: ", mintResult)
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
 
-    console.log("token owner address: ", await this.GhostmarketERC721.ownerOf(tokenId))
-    const { logs } = await this.GhostmarketERC721.getLockedContent.sendTransaction(tokenId, { from: nftReceiver })
+    it("should set and get locked content for nft", async function () {
+      this.GhostmarketERC721.mintGhost(transferToAccount, [], "", hiddencontent)
 
-    expectEvent.inLogs(logs, 'LockedContentViewed', {
-      msgSender: nftReceiver,
-      tokenId: tokenId,
-      lockedContent: hiddencontent,
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+
+      console.log("token owner address: ", await this.GhostmarketERC721.ownerOf(tokenId))
+      const { logs } = await this.GhostmarketERC721.getLockedContent.sendTransaction(tokenId, { from: transferToAccount })
+
+      expectEvent.inLogs(logs, 'LockedContentViewed', {
+        msgSender: transferToAccount,
+        tokenId: tokenId,
+        lockedContent: hiddencontent,
+      });
     });
-  });
 
-  it("should revert if other then token owner tries to fetch locked content", async function () {
-    const tokenReceiver = accounts[1]
-    const hiddencontent = "top secret"
-    await this.GhostmarketERC721.mint(tokenReceiver, [], [], hiddencontent)
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
+    it("should revert if other then token owner tries to fetch locked content", async function () {
+      this.GhostmarketERC721.mintGhost(transferToAccount, [], "", hiddencontent)
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
 
-    await expectRevert(this.GhostmarketERC721.getLockedContent(tokenId),
-      "Caller must be the owner of the NFT"
-    );
-  });
+      await expectRevert(this.GhostmarketERC721.getLockedContent(tokenId),
+        "Caller must be the owner of the NFT"
+      );
+    });
 
-  it("should increment locked content view count", async function () {
-    const tokenReceiver = accounts[0]
-    const hiddencontent = "top secret"
-    await this.GhostmarketERC721.mint(tokenReceiver, [], [], hiddencontent)
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
+    it("should increment locked content view count", async function () {
 
-    const currentCounter = await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId)
-    // call two times the getLockedContent function, counter should increment by 2
-    await this.GhostmarketERC721.getLockedContent(tokenId)
-    await this.GhostmarketERC721.getLockedContent(tokenId)
-    expect(await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId)).to.be.bignumber.equal((currentCounter + 2).toString());
+      this.GhostmarketERC721.mintGhost(minter, [], "", hiddencontent)
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
 
-    //another NFT
-    await this.GhostmarketERC721.mint(tokenReceiver, [], [], "top secret2")
-    const tokenId2 = new BN(parseInt(await this.GhostmarketERC721.getCurrentCounter()) - 1)
-    const currentCounter2 = await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId2)
-    await this.GhostmarketERC721.getLockedContent(tokenId2)
-    expect(await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId2)).to.be.bignumber.equal((currentCounter2 + 1).toString());
+      const currentCounter = await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId)
+      // call two times the getLockedContent function, counter should increment by 2
+      await this.GhostmarketERC721.getLockedContent(tokenId)
+      await this.GhostmarketERC721.getLockedContent(tokenId)
+      expect(await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId)).to.be.bignumber.equal((currentCounter + 2).toString());
+
+      //another NFT
+      this.GhostmarketERC721.mintGhost(minter, [], "", "top secret2")
+      const tokenId2 = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+      const currentCounter2 = await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId2)
+      await this.GhostmarketERC721.getLockedContent(tokenId2)
+      expect(await this.GhostmarketERC721.getCurrentLockedContentViewTracker(tokenId2)).to.be.bignumber.equal((currentCounter2 + 1).toString());
+    });
   });
 });
