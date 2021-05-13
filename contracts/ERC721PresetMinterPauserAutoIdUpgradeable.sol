@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
@@ -32,7 +33,8 @@ contract ERC721PresetMinterPauserAutoIdUpgradeable is
     AccessControlEnumerableUpgradeable,
     ERC721EnumerableUpgradeable,
     ERC721BurnableUpgradeable,
-    ERC721PausableUpgradeable
+    ERC721PausableUpgradeable,
+    ERC721URIStorageUpgradeable
 {
     function initialize(
         string memory name,
@@ -72,16 +74,11 @@ contract ERC721PresetMinterPauserAutoIdUpgradeable is
         __ERC721Burnable_init_unchained();
         __Pausable_init_unchained();
         __ERC721Pausable_init_unchained();
-        __ERC721PresetMinterPauserAutoId_init_unchained(
-            name,
-            symbol,
-            baseTokenURI
-        );
+        __ERC721PresetMinterPauserAutoId_init_unchained(baseTokenURI);
+        __ERC721URIStorage_init_unchained();
     }
 
     function __ERC721PresetMinterPauserAutoId_init_unchained(
-        string memory name,
-        string memory symbol,
         string memory baseTokenURI
     ) internal initializer {
         _baseTokenURI = baseTokenURI;
@@ -121,6 +118,55 @@ contract ERC721PresetMinterPauserAutoIdUpgradeable is
         _tokenIdTracker.increment();
     }
 
+    function _burn(uint256 tokenId)
+        internal
+        override(ERC721URIStorageUpgradeable, ERC721Upgradeable)
+    {
+        ERC721Upgradeable._burn(tokenId);
+        ERC721URIStorageUpgradeable._burn(tokenId);
+    }
+
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        virtual
+        override(ERC721URIStorageUpgradeable, ERC721Upgradeable)
+        returns (string memory)
+    {
+        return ERC721URIStorageUpgradeable.tokenURI(tokenId);
+    }
+
+    /**
+     * @dev polynetwork CrossChainNFTMapping
+     */
+    function mintWithURI(
+        address to,
+        uint256 tokenId,
+        string memory uri
+    ) external {
+        require(!_exists(tokenId), "token id already exist");
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
+    }
+
+    function _safeMint(address to, uint256 tokenId) internal virtual override {
+        super._safeMint(to, tokenId);
+    }
+
+    /**
+     * @dev update tokenURI
+     */
+    function _setTokenURI(uint256 tokenId, string memory tokenURI)
+        internal
+        virtual
+        override
+    {
+        ERC721URIStorageUpgradeable._setTokenURI(tokenId, tokenURI);
+    }
+
     function getCurrentCounter() public view returns (uint256) {
         return _tokenIdTracker.current();
     }
@@ -129,6 +175,14 @@ contract ERC721PresetMinterPauserAutoIdUpgradeable is
         if (_tokenIdTracker.current() == 0) {
             return _tokenIdTracker.current();
         } else return _tokenIdTracker.current() - 1;
+    }
+
+    function setBaseTokenURI(string memory baseTokenURI) public {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
+            "setBaseTokenURI: must have ADMIN role to change this"
+        );
+        _baseTokenURI = baseTokenURI;
     }
 
     /**

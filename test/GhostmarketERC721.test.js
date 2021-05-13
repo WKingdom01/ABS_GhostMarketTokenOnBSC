@@ -20,11 +20,11 @@ contract('GhostmarketERC721', async accounts => {
   console.log('transferToAccount: ', transferToAccount);
   console.log('royalitiesAccount: ', royalitiesAccount);
   console.log('mintingFeeAccount: ', mintingFeeAccount);
-  before(async function () {
+  beforeEach(async function () {
     // Deploy a new contract before the tests
     this.GhostmarketERC721 = await deployProxy(
       my_constants._t_c.GhostmarketERC721,
-      [my_constants._t_c.TOKEN_NAME, my_constants._t_c.TOKEN_SYMBOL, my_constants._t_c.TOKEN_URI],
+      [my_constants._t_c.TOKEN_NAME, my_constants._t_c.TOKEN_SYMBOL, my_constants._t_c.BASE_URI],
       { initializer: "initialize", unsafeAllowCustomTypes: true });
     console.log('Deployed', this.GhostmarketERC721.address);
   });
@@ -38,11 +38,24 @@ contract('GhostmarketERC721', async accounts => {
   });
 
   it("should have base uri + token uri ", async function () {
-    await this.GhostmarketERC721.mintGhost(minter, [], "", "")
+    await this.GhostmarketERC721.mintGhost()
     const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
-    expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.TOKEN_URI + tokenId);
+    expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
   });
 
+  it("should mint with URI", async function () {
+    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+    await this.GhostmarketERC721.mintWithURI(minter, tokenId, tokenId)
+    expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
+  });
+
+  it("should mint with new URI", async function () {
+    const newURI = "new.app/" 
+    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+    await this.GhostmarketERC721.setBaseTokenURI(newURI);
+    await this.GhostmarketERC721.mintWithURI(minter, tokenId, tokenId)
+    expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(newURI + tokenId);
+  });
 
   describe('mint NFT', function () {
     const value = ether('0.1')

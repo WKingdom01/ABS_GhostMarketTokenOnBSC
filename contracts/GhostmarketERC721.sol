@@ -3,7 +3,6 @@ pragma solidity ^0.8.3;
 
 import "./ERC721PresetMinterPauserAutoIdUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 /**
  * @dev ERC721 token with minting, burning, pause, secondary sales royalitiy functions.
@@ -62,7 +61,7 @@ contract GhostmarketERC721 is
         string memory uri
     ) public override initializer {
         __ERC721_init_unchained(name, symbol);
-        __ERC721PresetMinterPauserAutoId_init_unchained(name, symbol, uri);
+        __ERC721PresetMinterPauserAutoId_init_unchained(uri);
     }
 
     /**
@@ -248,7 +247,7 @@ contract GhostmarketERC721 is
      * tokenId: 0 (type: uint256),
      * lockedContent: 'top secret' (type: string)
      */
-    function getLockedContent(uint256 _tokenId) public returns (string memory) {
+    function getLockedContent(uint256 _tokenId) public {
         require(
             ownerOf(_tokenId) == msg.sender,
             "Caller must be the owner of the NFT"

@@ -8,11 +8,17 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.0.0",
+    "@openzeppelin/test-environment": "^0.1.9",
     "@openzeppelin/test-helpers": "^0.5.10",
     "@openzeppelin/truffle-upgrades": "^1.5.1",
     "@truffle/hdwallet-provider": "^1.2.6",
     "chai": "^4.3.4",
+    "ganache-cli": "^6.12.2",
+    "mocha": "^8.4.0",
     "truffle": "^5.3.1",
     "truffle-flattener": "^1.5.0"
+  },
+  "scripts": {
+    "test": "mocha --exit --recursive"
   }
 }
