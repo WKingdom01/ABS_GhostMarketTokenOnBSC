@@ -49,12 +49,18 @@ contract('GhostmarketERC721', async accounts => {
     expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
   });
 
-  it("should mint with new URI", async function () {
+  it("should mintGhost with new URI", async function () {
     const newURI = "new.app/"
-    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
     await this.GhostmarketERC721.setBaseTokenURI(newURI);
-    await this.GhostmarketERC721.mintWithURI(minter, tokenId, tokenId)
+    await this.GhostmarketERC721.mintGhost(minter, [], "", "")
+    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
     expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(newURI + tokenId);
+  });
+
+  it("should mintGhost with URI", async function () {
+    await this.GhostmarketERC721.mintGhost(minter, [], "", "")
+    const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+    expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
   });
 
   describe('mint NFT', function () {

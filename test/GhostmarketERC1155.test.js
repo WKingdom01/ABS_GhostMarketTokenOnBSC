@@ -16,18 +16,24 @@ var my_constants = require('./include_in_tesfiles.js')
 // Start test block
 contract('GhostmarketERC1155', async accounts => {
   const [minter, transferToAccount, royalitiesAccount, mintingFeeAccount, royalitiesAccount2] = accounts;
-  before(async function () {
+  console.log('minter: ', minter)
+  console.log('transferToAccount: ', transferToAccount)
+  console.log('royalitiesAccount: ', royalitiesAccount)
+  console.log('mintingFeeAccount: ', mintingFeeAccount)
+  console.log('royalitiesAccount2: ', royalitiesAccount2)
+  beforeEach(async function () {
     // Deploy a new contract before the tests
     this.GhostmarketERC1155 = await deployProxy(
       my_constants._t_c.GhostmarketERC1155,
-      [my_constants._t_c.TOKEN_NAME, my_constants._t_c.TOKEN_SYMBOL, my_constants._t_c.TOKEN_URI],
+      [my_constants._t_c.TOKEN_NAME, my_constants._t_c.TOKEN_SYMBOL, my_constants._t_c.BASE_URI],
       { initializer: "initialize", unsafeAllowCustomTypes: true });
     console.log('Deployed ERC1155 ', this.GhostmarketERC1155.address);
   });
 
-  it("should have token uri " + my_constants._t_c.TOKEN_URI, async function () {
-    const firstTokenID = new BN('42');
-    expect(await this.GhostmarketERC1155.uri(firstTokenID)).to.equal(my_constants._t_c.TOKEN_URI);
+  it.only("should have token uri " + my_constants._t_c.BASE_URI, async function () {
+    const tokenID = await this.GhostmarketERC1155.getLastTokenID()
+    console.log("baseURI: ", await this.GhostmarketERC1155.baseURI())
+    expect(await this.GhostmarketERC1155.baseURI()).to.equal(my_constants._t_c.BASE_URI);
   });
 
   it("should have name " + my_constants._t_c.TOKEN_NAME, async function () {
@@ -42,22 +48,34 @@ contract('GhostmarketERC1155', async accounts => {
     expect((await this.GhostmarketERC1155.getCurrentCounter())).to.be.bignumber.equal('0');
   });
 
+  it.only("should have base uri + token uri ", async function () {
+    const mintAmount = new BN(2);
+    const data = '0x987654321';
+    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "")
+    const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
+    console.log("uri: ",await this.GhostmarketERC1155.uri(tokenId))
+    expect(await this.GhostmarketERC1155.uri(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
+  });
+
 
 
   it('should mint tokens with royalty fee', async function () {
-    const tokenId = new BN('0');
+    
     const mintAmount = new BN(2);
     const data = '0x987654321';
     const value = 88
     const counter = parseInt((await this.GhostmarketERC1155.getCurrentCounter()).toString())
 
     const receipt = await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [{ recipient: minter, value: value }], "");
+    const tokenID = await this.GhostmarketERC1155.getLastTokenID()
     expectEvent(receipt, 'TransferSingle', { operator: minter, from: ZERO_ADDRESS, to: transferToAccount, id: tokenId, value: mintAmount });
     expect(parseInt(((await this.GhostmarketERC1155.getCurrentCounter()).toString()))).to.equal(counter + 1);
 
     const values = await this.GhostmarketERC1155.getRoyaltyFeeBps(tokenId);
     expect(values.length).to.equal(1);
     expect(values[0]).to.be.bignumber.equal(value.toString());
+    const tokenURI = await this.GhostmarketERC1155.uri(tokenID)
+    expectEvent(result, 'Minted', { toAddress: minter, tokenId: tokenId, tokenURI: tokenURI, amount: mintAmount })
   });
 
   it('should mint tokens as batch with royalty fee', async function () {
@@ -136,7 +154,7 @@ contract('GhostmarketERC1155', async accounts => {
     const mintAmount = new BN(2);
     const data = '0x987654321';
     await expectRevert(
-      this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [],"", { from: royalitiesAccount2 }),
+      this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", { from: royalitiesAccount2 }),
       'ERC1155PresetMinterPauser: must have minter role to mint'
     );
   });
@@ -221,7 +239,7 @@ contract('GhostmarketERC1155', async accounts => {
       console.log("ghostmarketFeeMultiplier: ", await this.GhostmarketERC1155.ghostmarketFeeMultiplier())
       console.log("ghostmarketMintingFee: ", await this.GhostmarketERC1155.ghostmarketMintingFee())
       console.log("ghostmarketFeeAddress: ", await this.GhostmarketERC1155.ghostmarketFeeAddress())
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [],"ts", { value: value });
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ts", { value: value });
       let feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
