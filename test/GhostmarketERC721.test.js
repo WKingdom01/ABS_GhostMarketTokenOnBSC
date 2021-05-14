@@ -116,6 +116,12 @@ contract('GhostmarketERC721', async accounts => {
       expect(values).to.be.empty;
     });
 
+    it("should mint with json string", async function () {      
+      await this.GhostmarketERC721.mintGhost(transferToAccount, [], my_constants._t_c.METADATA_JSON, "")
+      const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
+      expect(await this.GhostmarketERC721.getMetadataJson(tokenId)).to.equal(my_constants._t_c.METADATA_JSON)
+    });
+
     it('everybody can mint', async function () {
       this.GhostmarketERC721.mintGhost(transferToAccount, [], "", "", { from: mintingFeeAccount })
     });

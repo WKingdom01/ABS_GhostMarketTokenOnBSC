@@ -44,7 +44,6 @@ contract GhostmarketERC721 is
 
     event AttributesSet(uint256 tokenId, string metadataJson);
     event GhostmarketFeeAddressChanged(address newValue);
-    event GhostmarketFeeMultiplierChanged(uint256 newValue);
     event GhostmarketMintFeeChanged(uint256 newValue);
     event GhostmarketFeePaid(address sender, uint256 value);
     event Minted(address toAddress, uint256 tokenId, string tokenURI);
