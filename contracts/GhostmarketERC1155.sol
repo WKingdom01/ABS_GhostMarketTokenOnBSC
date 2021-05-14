@@ -2,10 +2,9 @@
 
 pragma solidity ^0.8.3;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/presets/ERC1155PresetMinterPauserUpgradeable.sol";
+import "./ERC1155PresetMinterPauserUpgradeableCustom.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "./ERC1155BaseURI.sol";
 
 /**
  * @dev ERC1155 token with minting, burning, pause, secondary sales royalitiy functions.
@@ -15,11 +14,13 @@ import "./ERC1155BaseURI.sol";
 contract GhostmarketERC1155 is
     Initializable,
     ERC1155PresetMinterPauserUpgradeable,
-    ReentrancyGuardUpgradeable,
-    ERC1155BaseURI
+    ReentrancyGuardUpgradeable
 {
     string public name;
     string public symbol;
+
+    // tokenId => attributes array
+    mapping(uint256 => string) private _metadataJson;
 
     // minting fee
     uint256 private _ghostmarketMintingFee;
@@ -28,13 +29,13 @@ contract GhostmarketERC1155 is
     address payable private _ghostmarketFeeAddress;
 
     // struct for secondary sales fees
-    struct Fee {
+    struct Royalities {
         address payable recipient;
         uint256 value;
     }
 
     // tokenId => fees array
-    mapping(uint256 => Fee[]) public fees;
+    mapping(uint256 => Royalities[]) public fees;
 
     // tokenId => locked content string
     mapping(uint256 => string) public _lockedContent;
@@ -42,8 +43,6 @@ contract GhostmarketERC1155 is
     mapping(uint256 => uint256) private _lockedContentViewTracker;
 
     event SecondarySaleFees(uint256 tokenId, address recipients, uint256 bps);
-    event RoyalitiesAccountChanged(uint256 tokenId, address from, address to);
-    event RoyalitiesFeeValueChanged(uint256 tokenId, uint256 value);
     event GhostmarketFeeAddressChanged(address newValue);
     event GhostmarketMintFeeChanged(uint256 newValue);
     event GhostmarketFeePaid(address sender, uint256 value);
@@ -58,6 +57,7 @@ contract GhostmarketERC1155 is
         string tokenURI,
         uint256 amount
     );
+    event AttributesSet(uint256 tokenId, string metadataJson);
 
     function initialize(
         string memory _name,
@@ -75,10 +75,6 @@ contract GhostmarketERC1155 is
     // _tokenIdTracker to gnerate automated tocken IDs
     CountersUpgradeable.Counter private _tokenIdTracker;
 
-    function uri(uint256 id) public view virtual override(ERC1155BaseURI, ERC1155Upgradeable) returns (string memory) {
-        return _tokenURI(id);
-    }
-
     /**
      * @dev mint ERC1155 tokens with optional royalities, minting fee and locked content
      */
@@ -86,7 +82,8 @@ contract GhostmarketERC1155 is
         address _to,
         uint256 amount,
         bytes memory data,
-        Fee[] memory _fees,
+        Royalities[] memory _fees,
+        string memory metadata,
         string memory lockedcontent
     ) public payable nonReentrant {
         super.mint(_to, _tokenIdTracker.current(), amount, data);
@@ -97,7 +94,7 @@ contract GhostmarketERC1155 is
             _saveRoyaltyFee(_tokenIdTracker.current(), _fees[0]);
         }
         if (_ghostmarketMintingFee > 0) {
-            _sendMintingFee(amount);
+            _sendMintingFee();
         }
         if (
             keccak256(abi.encodePacked(lockedcontent)) !=
@@ -105,7 +102,18 @@ contract GhostmarketERC1155 is
         ) {
             setLockedContent(_tokenIdTracker.current(), lockedcontent);
         }
-        emit Minted(_to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), amount);
+        if (
+            keccak256(abi.encodePacked(metadata)) !=
+            keccak256(abi.encodePacked(""))
+        ) {
+            _setMetadataJson(_tokenIdTracker.current(), metadata);
+        }
+        emit Minted(
+            _to,
+            _tokenIdTracker.current(),
+            uri(_tokenIdTracker.current()),
+            amount
+        );
         _tokenIdTracker.increment();
     }
 
@@ -133,7 +141,7 @@ contract GhostmarketERC1155 is
         view
         returns (address payable[] memory)
     {
-        Fee[] memory _fees = fees[_tokenId];
+        Royalities[] memory _fees = fees[_tokenId];
         address payable[] memory result = new address payable[](_fees.length);
         for (uint256 i = 0; i < _fees.length; i++) {
             result[i] = _fees[i].recipient;
@@ -150,7 +158,7 @@ contract GhostmarketERC1155 is
         view
         returns (uint256[] memory)
     {
-        Fee[] memory _fees = fees[_tokenId];
+        Royalities[] memory _fees = fees[_tokenId];
         uint256[] memory result = new uint256[](_fees.length);
         for (uint256 i = 0; i < _fees.length; i++) {
             result[i] = _fees[i].value;
@@ -162,7 +170,9 @@ contract GhostmarketERC1155 is
      * @dev save the "secondary sales"/royalities fee for the NFT id
      * fee basis points 10000 = 100%
      */
-    function _saveRoyaltyFee(uint256 _tokenId, Fee memory _fee) internal {
+    function _saveRoyaltyFee(uint256 _tokenId, Royalities memory _fee)
+        internal
+    {
         require(_fee.recipient != address(0x0), "Recipient should be present");
         require(_fee.value > 0, "Fee value should be positive");
         fees[_tokenId].push(_fee);
@@ -172,13 +182,14 @@ contract GhostmarketERC1155 is
     /**
      * @dev send minting fee to Ghostmarket
      */
-    function _sendMintingFee(uint256 nftAmount) internal {
+    function _sendMintingFee() internal {
         require(
             _ghostmarketFeeAddress != address(0),
             "Ghostmarket minting Fee Address not set"
         );
         require(_ghostmarketMintingFee > 0, "Ghostmarket minting Fee is zero");
-        (bool success, ) = _ghostmarketFeeAddress.call{value: _ghostmarketMintingFee}("");
+        (bool success, ) =
+            _ghostmarketFeeAddress.call{value: _ghostmarketMintingFee}("");
         require(success, "Transfer failed.");
         emit GhostmarketFeePaid(msg.sender, _ghostmarketMintingFee);
     }
@@ -239,9 +250,7 @@ contract GhostmarketERC1155 is
      * tokenId: 0 (type: uint256),
      * lockedContent: 'top secret' (type: string)
      */
-    function getLockedContent(address from, uint256 _tokenId)
-        public
-    {
+    function getLockedContent(address from, uint256 _tokenId) public {
         require(
             from == _msgSender() || isApprovedForAll(from, _msgSender()),
             "ERC1155: caller is not owner nor approved to get locked content"
@@ -274,5 +283,27 @@ contract GhostmarketERC1155 is
         returns (uint256)
     {
         return _lockedContentViewTracker[_tokenId];
+    }
+
+    /**
+     * @dev saves the nft tokens custom attributes to contract storage
+     * emits AttributesSet event
+     */
+    function _setMetadataJson(uint256 tokenId, string memory metadataJson)
+        internal
+    {
+        _metadataJson[tokenId] = metadataJson;
+        emit AttributesSet(tokenId, metadataJson);
+    }
+
+    /**
+     * @dev get the nft token attributes with the tokenId
+     */
+    function getMetadataJson(uint256 tokenId)
+        public
+        view
+        returns (string memory)
+    {
+        return _metadataJson[tokenId];
     }
 }
