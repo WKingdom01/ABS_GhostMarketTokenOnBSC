@@ -38,7 +38,7 @@ contract('GhostmarketERC721', async accounts => {
   });
 
   it("should have base uri + token uri ", async function () {
-    await this.GhostmarketERC721.mintGhost()
+    await this.GhostmarketERC721.mintGhost(minter, [], "", "")
     const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
     expect(await this.GhostmarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
   });
@@ -50,7 +50,7 @@ contract('GhostmarketERC721', async accounts => {
   });
 
   it("should mint with new URI", async function () {
-    const newURI = "new.app/" 
+    const newURI = "new.app/"
     const tokenId = new BN(parseInt(await this.GhostmarketERC721.getLastTokenID()))
     await this.GhostmarketERC721.setBaseTokenURI(newURI);
     await this.GhostmarketERC721.mintWithURI(minter, tokenId, tokenId)
@@ -137,8 +137,6 @@ contract('GhostmarketERC721', async accounts => {
     });
 
     it('should requires a non-null minting fee address', async function () {
-      const minter = accounts[1]
-      const feeAddress = accounts[3]
       const value = ether('0.1');
       await this.GhostmarketERC721.setGhostmarketFeeAddress(ZERO_ADDRESS)
       await this.GhostmarketERC721.setGhostmarketMintFee(value)
@@ -154,10 +152,29 @@ contract('GhostmarketERC721', async accounts => {
       await this.GhostmarketERC721.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
 
-      this.GhostmarketERC721.mintGhost(minter, [], "", "", { value: value })
+      await this.GhostmarketERC721.mintGhost(minter, [], "", "", { value: value })
+
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
+      console.log("royalitiesAccount: ", await web3.eth.getBalance(royalitiesAccount))
+
+      expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore) + parseInt(value))
+    });
+
+    it('should send fee to mintingFeeAccount from another minting account', async function () {
+      const value = ether('0.1');
+      await this.GhostmarketERC721.setGhostmarketFeeAddress(mintingFeeAccount)
+      await this.GhostmarketERC721.setGhostmarketMintFee(value)
+      const feeAddressEthBalanceBefore = await web3.eth.getBalance(mintingFeeAccount)
+
+      await this.GhostmarketERC721.mintGhost(royalitiesAccount, [], "", "", { value: value, from: royalitiesAccount })
+
+      const feeAddressEthBalanceAfter = await web3.eth.getBalance(mintingFeeAccount)
+      console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
+      console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
+      console.log("royalitiesAccount: ", await web3.eth.getBalance(royalitiesAccount))
+
       expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore) + parseInt(value))
     });
   });

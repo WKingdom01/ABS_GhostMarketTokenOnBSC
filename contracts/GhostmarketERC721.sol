@@ -185,6 +185,7 @@ contract GhostmarketERC721 is
             _ghostmarketMintingFee > 0,
             "Ghostmarket minting fee should be greater then 0"
         );
+        /* _ghostmarketFeeAddress.transfer(_ghostmarketMintingFee); */
         (bool success, ) = _ghostmarketFeeAddress.call{value: _ghostmarketMintingFee}("");
         require(success, "Transfer failed.");
         emit GhostmarketFeePaid(msg.sender, _ghostmarketMintingFee);
