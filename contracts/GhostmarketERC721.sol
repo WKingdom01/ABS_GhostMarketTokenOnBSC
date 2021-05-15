@@ -22,10 +22,10 @@ contract GhostMarketERC721 is
     mapping(uint256 => string) private _metadataJson;
 
     // tokenId => royalties array
-    mapping(uint256 => Royalty[]) public royalties;
+    mapping(uint256 => Royalty[]) private royalties;
 
     // tokenId => locked content string
-    mapping(uint256 => string) public _lockedContent;
+    mapping(uint256 => string) private _lockedContent;
 
     // tokenId => locked content view counter
     mapping(uint256 => uint256) private _lockedContentViewTracker;
@@ -121,6 +121,10 @@ contract GhostMarketERC721 is
             );
             require(_royalties[i].value > 0, "Royalties value should be positive");
             royalties[_tokenId].push(_royalties[i]);
+            address[] memory recipients = new address[](_royalties.length);
+            uint256[] memory bps = new uint256[](_royalties.length);
+            emit RoyaltiesFeesSet(_tokenId, recipients, bps);
+            
         }
     }
 
@@ -137,11 +141,8 @@ contract GhostMarketERC721 is
     ) public payable nonReentrant {
         mint(_to);
         uint256 _tokenId = getLastTokenID();
-        address[] memory recipients = new address[](_royalties.length);
-        uint256[] memory bps = new uint256[](_royalties.length);
         if (_royalties.length > 0) {
             saveRoyalties(_tokenId, _royalties);
-            emit RoyaltiesFeesSet(_tokenId, recipients, bps);
         }
         if (
             keccak256(abi.encodePacked(metadata)) !=
@@ -156,24 +157,21 @@ contract GhostMarketERC721 is
             setLockedContent(_tokenId, lockedcontent);
         }
         if (_ghostmarketMintingFee > 0) {
-            _sendMintingFee();
+            _checkMintingFee();
         }
         emit Minted(_to, _tokenId, tokenURI(_tokenId));
     }
 
     /**
-     * @dev send minting fee to contract
+     * @dev check minting fee sent to contract
      * emits MintFeesPaid event
      */
-    function _sendMintingFee() internal {
+    function _checkMintingFee() internal {
         require(
-            _ghostmarketMintingFee > 0,
-            "Ghostmarket minting fee should be greater then 0"
+            msg.value >= _ghostmarketMintingFee,
+             "Not enough sent for Ghostmarket minting fees"
         );
-        /* _ghostmarketFeeAddress.transfer(_ghostmarketMintingFee); */
-        // (bool success, ) = _ghostmarketFeeAddress.call{value: _ghostmarketMintingFee}("");
-        // require(success, "Transfer failed.");
-        // emit MintFeesPaid(msg.sender, _ghostmarketMintingFee); // chg to real value
+        emit MintFeesPaid(msg.sender, msg.value);
     }
 
     /**
@@ -183,7 +181,7 @@ contract GhostMarketERC721 is
     function setGhostmarketMintFee(uint256 gmmf) public {
         require(
             hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            "Caller must have admin role to set minting fee percent"
+            "Caller must have admin role to set minting fee"
         );
         _ghostmarketMintingFee = gmmf;
         emit MintFeesChanged(_ghostmarketMintingFee);
@@ -258,7 +256,7 @@ contract GhostMarketERC721 is
                 ownerOf(_tokens[i]) == msg.sender,
                 "Caller must be the owner of the NFT"
             );
-            super._burn(_tokens[i]);
+            burn(_tokens[i]);
         }
     }
 }
