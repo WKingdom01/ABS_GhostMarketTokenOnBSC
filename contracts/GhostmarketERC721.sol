@@ -145,7 +145,10 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		payedMintingFeeBalance += msg.value;
 		emit MintFeesPaid(msg.sender, msg.value);
 	}
-
+    /**
+     * @dev withdraw contract balance
+     * emits GhostmarketFeeWithdrawn
+     */
 	function withdraw(uint256 withdrawAmount) external onlyOwner {
 		require(withdrawAmount > 0 && withdrawAmount <= payedMintingFeeBalance, "Withdraw amount should be greater then 0 and less then contract balance");
 
