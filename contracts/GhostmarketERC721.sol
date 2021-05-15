@@ -103,14 +103,18 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 
     /**
 	 * @dev check mint fees sent to contract
-	 * emits MintFeesPaid event
+	 * emits MintFeesPaid event if set
 	 */
 	function _checkMintFees()
         internal
     {
-		require(msg.value == _ghostmarketMintFees, "Wrong fees value sent to GhostmMrket for mint fees");
-		_payedMintFeesBalance += msg.value;
-		emit MintFeesPaid(msg.sender, msg.value);
+		if (_ghostmarketMintFees > 0) {
+			require(msg.value == _ghostmarketMintFees, "Wrong fees value sent to GhostmMrket for mint fees");
+		}
+		if (msg.value > 0) {
+			_payedMintFeesBalance += msg.value;
+			emit MintFeesPaid(msg.sender, msg.value);
+		}
 	}
 
 	/**
@@ -133,9 +137,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		if (keccak256(abi.encodePacked(lockedcontent)) != keccak256(abi.encodePacked(""))) {
 			_setLockedContent(tokenId, lockedcontent);
 		}
-		if (_ghostmarketMintFees > 0) {
-			_checkMintFees();
-		}
+		_checkMintFees();
 		emit Minted(to, tokenId, tokenURI(tokenId));
 	}
 
@@ -145,10 +147,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
      */
 	function withdraw(uint256 withdrawAmount) external onlyOwner {
 		require(withdrawAmount > 0 && withdrawAmount <= _payedMintFeesBalance, "Withdraw amount should be greater then 0 and less then contract balance");
-
 		_payedMintFeesBalance -= withdrawAmount;
-
-		//msg.sender.transfer(withdrawAmount);
 		(bool success, ) = msg.sender.call{value: withdrawAmount}("");
 		require(success, "Transfer failed.");
 		emit MintFeesWithdrawn(msg.sender, withdrawAmount);
