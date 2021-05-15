@@ -5,305 +5,238 @@ pragma solidity ^0.8.3;
 import "./ERC1155PresetMinterPauserUpgradeableCustom.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
- * @dev ERC1155 token with minting, burning, pause, secondary sales royalitiy functions.
+ * @dev ERC1155 token with minting, burning, pause, royalties & lock content functions.
  *
  */
 
-contract GhostmarketERC1155 is
-    Initializable,
-    ERC1155PresetMinterPauserUpgradeable,
-    ReentrancyGuardUpgradeable
-{
-    string public name;
-    string public symbol;
+contract GhostmarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+	string public name;
+	string public symbol;
 
-    // tokenId => attributes array
-    mapping(uint256 => string) private _metadataJson;
+	// struct for royalties fees
+	struct Royalty {
+		address payable recipient;
+		uint256 value;
+	}
 
-    // minting fee
-    uint256 private _ghostmarketMintingFee;
+	// tokenId => attributes array
+	mapping(uint256 => string) internal _metadataJson;
 
-    //address where the transfer fees will be sent
-    address payable private _ghostmarketFeeAddress;
+	// tokenId => royalties array
+	mapping(uint256 => Royalty[]) internal _royalties;
 
-    // struct for secondary sales fees
-    struct Royalities {
-        address payable recipient;
-        uint256 value;
-    }
+	// tokenId => locked content array
+	mapping(uint256 => string) internal _lockedContent;
 
-    // tokenId => fees array
-    mapping(uint256 => Royalities[]) public fees;
+	// tokenId => locked content view counter array
+	mapping(uint256 => uint256) internal _lockedContentViewTracker;
 
-    // tokenId => locked content string
-    mapping(uint256 => string) public _lockedContent;
-    // tokenId => locked content view counter
-    mapping(uint256 => uint256) private _lockedContentViewTracker;
+	// events
+	event RoyaltiesFeesSet(uint256 tokenId, address[] recipients, uint256[] bps);
+	event LockedContentViewed(address msgSender, uint256 tokenId, string lockedContent);
+	event AttributesSet(uint256 tokenId, string metadataJson);
+	event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
+	event MintFeesChanged(uint256 newValue);
+	event MintFeesPaid(address sender, uint256 value);
+	event Minted(address toAddress, uint256 tokenId, string tokenURI, uint256 amount);
 
-    event SecondarySaleFees(uint256 tokenId, address recipients, uint256 bps);
-    event GhostmarketFeeAddressChanged(address newValue);
-    event GhostmarketMintFeeChanged(uint256 newValue);
-    event GhostmarketFeePaid(address sender, uint256 value);
-    event LockedContentViewed(
-        address msgSender,
-        uint256 tokenId,
-        string lockedContent
-    );
-    event Minted(
-        address toAddress,
-        uint256 tokenId,
-        string tokenURI,
-        uint256 amount
-    );
-    event AttributesSet(uint256 tokenId, string metadataJson);
+	uint256 internal _payedMintFeesBalance;
 
-    function initialize(
-        string memory _name,
-        string memory _symbol,
-        string memory uri
-    ) public virtual initializer {
-        __ERC1155_init_unchained(uri);
-        __ERC1155PresetMinterPauser_init_unchained(uri);
-        name = _name;
-        symbol = _symbol;
-    }
+	// minting fee
+	uint256 internal _ghostmarketMintFees;
 
-    using CountersUpgradeable for CountersUpgradeable.Counter;
+	function initialize(
+		string memory _name,
+		string memory _symbol,
+		string memory uri
+	) public virtual initializer {
+		__ERC1155_init_unchained(uri);
+		__ERC1155PresetMinterPauser_init_unchained(uri);
+		__Ownable_init_unchained();
+		name = _name;
+		symbol = _symbol;
+	}
 
-    // _tokenIdTracker to gnerate automated tocken IDs
-    CountersUpgradeable.Counter private _tokenIdTracker;
+	using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    /**
-     * @dev mint ERC1155 tokens with optional royalities, minting fee and locked content
-     */
-    function mintGhost(
-        address _to,
-        uint256 amount,
-        bytes memory data,
-        Royalities[] memory _fees,
-        string memory metadata,
-        string memory lockedcontent
-    ) public payable nonReentrant {
-        super.mint(_to, _tokenIdTracker.current(), amount, data);
-        //_setTokenURI(_tokenIdTracker.current(), _tokenIdTracker.current());
-        if (_fees.length > 0) {
-            //fees array length should be 1 for single mint,
-            require(_fees.length == 1);
-            _saveRoyaltyFee(_tokenIdTracker.current(), _fees[0]);
-        }
-        if (_ghostmarketMintingFee > 0) {
-            _sendMintingFee();
-        }
-        if (
-            keccak256(abi.encodePacked(lockedcontent)) !=
-            keccak256(abi.encodePacked(""))
-        ) {
-            setLockedContent(_tokenIdTracker.current(), lockedcontent);
-        }
-        if (
-            keccak256(abi.encodePacked(metadata)) !=
-            keccak256(abi.encodePacked(""))
-        ) {
-            _setMetadataJson(_tokenIdTracker.current(), metadata);
-        }
-        emit Minted(
-            _to,
-            _tokenIdTracker.current(),
-            uri(_tokenIdTracker.current()),
-            amount
-        );
-        _tokenIdTracker.increment();
-    }
+	// _tokenIdTracker to gnerate automated tocken IDs
+	CountersUpgradeable.Counter private _tokenIdTracker;
 
-    /**
-     * @dev current _tokenIdTracker
-     */
-    function getCurrentCounter() public view returns (uint256) {
-        return _tokenIdTracker.current();
-    }
+	/**
+	 * @dev set a NFT custom attributes to contract storage
+	 * emits AttributesSet event
+	 */
+	function _setMetadataJson(uint256 tokenId, string memory metadataJson) internal {
+		_metadataJson[tokenId] = metadataJson;
+		emit AttributesSet(tokenId, metadataJson);
+	}
 
-    /**
-     * @dev get last minted token id /  _tokenIdTracker
-     */
-    function getLastTokenID() public view returns (uint256) {
-        if (_tokenIdTracker.current() == 0) {
-            return _tokenIdTracker.current();
-        } else return _tokenIdTracker.current() - 1;
-    }
+	/**
+	 * @dev get a NFT custom attributes
+	 */
+	function getMetadataJson(uint256 tokenId) external view returns (string memory) {
+		return _metadataJson[tokenId];
+	}
 
-    /**
-     * @dev get the "secondary sales"/royalities fee recepients with the tokenId
-     */
-    function getRoyalitiesRecipients(uint256 _tokenId)
-        public
-        view
-        returns (address payable[] memory)
-    {
-        Royalities[] memory _fees = fees[_tokenId];
-        address payable[] memory result = new address payable[](_fees.length);
-        for (uint256 i = 0; i < _fees.length; i++) {
-            result[i] = _fees[i].recipient;
-        }
-        return result;
-    }
+	/**
+	 * @dev get a NFT royalties recipients
+	 */
+	function getRoyaltiesRecipients(uint256 tokenId) external view returns (address payable[] memory) {
+		Royalty[] memory royalties = _royalties[tokenId];
+		address payable[] memory result = new address payable[](royalties.length);
+		for (uint256 i = 0; i < royalties.length; i++) {
+			result[i] = royalties[i].recipient;
+		}
+		return result;
+	}
 
-    /**
-     * @dev get the "secondary sales"/royalities fee for the NFT id
-     * fee basis points 10000 = 100%
-     */
-    function getRoyaltyFeeBps(uint256 _tokenId)
-        public
-        view
-        returns (uint256[] memory)
-    {
-        Royalities[] memory _fees = fees[_tokenId];
-        uint256[] memory result = new uint256[](_fees.length);
-        for (uint256 i = 0; i < _fees.length; i++) {
-            result[i] = _fees[i].value;
-        }
-        return result;
-    }
+	/**
+	 * @dev get a NFT royalties fees
+	 * fee basis points 10000 = 100%
+	 */
+	function getRoyaltiesBps(uint256 tokenId) external view returns (uint256[] memory) {
+		Royalty[] memory royalties = _royalties[tokenId];
+		uint256[] memory result = new uint256[](royalties.length);
+		for (uint256 i = 0; i < royalties.length; i++) {
+			result[i] = royalties[i].value;
+		}
+		return result;
+	}
 
-    /**
-     * @dev save the "secondary sales"/royalities fee for the NFT id
-     * fee basis points 10000 = 100%
-     */
-    function _saveRoyaltyFee(uint256 _tokenId, Royalities memory _fee)
-        internal
-    {
-        require(_fee.recipient != address(0x0), "Recipient should be present");
-        require(_fee.value > 0, "Fee value should be positive");
-        fees[_tokenId].push(_fee);
-        emit SecondarySaleFees(_tokenId, _fee.recipient, _fee.value);
-    }
+	/**
+	 * @dev set a NFT royalties fees & recipients
+	 * fee basis points 10000 = 100%
+	 * emits RoyaltiesFeesSet event if set
+	 */
+	function _saveRoyalties(uint256 tokenId, Royalty[] memory royalties) internal {
+		for (uint256 i = 0; i < royalties.length; i++) {
+			require(royalties[i].recipient != address(0x0), "Recipient should be present");
+			require(royalties[i].value > 0, "Royalties value should be positive");
+			_royalties[tokenId].push(royalties[i]);
+			address[] memory recipients = new address[](royalties.length);
+			uint256[] memory bps = new uint256[](royalties.length);
+			emit RoyaltiesFeesSet(tokenId, recipients, bps);
+		}
+	}
 
-    /**
-     * @dev send minting fee to Ghostmarket
-     */
-    function _sendMintingFee() internal {
-        require(
-            _ghostmarketFeeAddress != address(0),
-            "Ghostmarket minting Fee Address not set"
-        );
-        require(_ghostmarketMintingFee > 0, "Ghostmarket minting Fee is zero");
-        (bool success, ) =
-            _ghostmarketFeeAddress.call{value: _ghostmarketMintingFee}("");
-        require(success, "Transfer failed.");
-        emit GhostmarketFeePaid(msg.sender, _ghostmarketMintingFee);
-    }
+	/**
+	 * @dev mint NFT, set royalties, set metadata json, set lockedcontent
+	 * emits Minted event
+	 */
+	function mintGhost(
+		address to,
+		uint256 amount,
+		bytes memory data,
+		Royalty[] memory royalties,
+		string memory metadata,
+		string memory lockedcontent
+	) public payable nonReentrant {
+		super.mint(to, _tokenIdTracker.current(), amount, data);
+		//_setTokenURI(_tokenIdTracker.current(), _tokenIdTracker.current());
+		if (royalties.length > 0) {
+			_saveRoyalties(_tokenIdTracker.current(), royalties);
+		}
+		if (keccak256(abi.encodePacked(metadata)) != keccak256(abi.encodePacked(""))) {
+			_setMetadataJson(_tokenIdTracker.current(), metadata);
+		}
+		if (keccak256(abi.encodePacked(lockedcontent)) != keccak256(abi.encodePacked(""))) {
+			_setLockedContent(_tokenIdTracker.current(), lockedcontent);
+		}
+		_checkMintFees();
+		emit Minted(to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), amount);
+		_tokenIdTracker.increment();
+	}
 
-    /**
-     * @dev set the wallet address where fees will be collected
-     */
-    function setGhostmarketFeeAddress(address payable gmfa) public {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            "Caller must have admin role to set minting fee address"
-        );
+	/**
+	 * @dev check mint fees sent to contract
+	 * emits MintFeesPaid event
+	 */
+	function _checkMintFees() internal {
+		if (_ghostmarketMintFees > 0) {
+			require(msg.value == _ghostmarketMintFees, "Wrong fees value sent to GhostMrket for mint fees");
+		}
+		if (msg.value > 0) {
+			_payedMintFeesBalance += msg.value;
+			emit MintFeesPaid(msg.sender, msg.value);
+		}
+	}
 
-        _ghostmarketFeeAddress = gmfa;
-        emit GhostmarketFeeAddressChanged(_ghostmarketFeeAddress);
-    }
+	/**
+	 * @dev withdraw contract balance
+	 * emits MintFeesWithdrawn
+	 */
+	function withdraw(uint256 withdrawAmount) external onlyOwner {
+		require(withdrawAmount > 0 && withdrawAmount <= _payedMintFeesBalance, "Withdraw amount should be greater then 0 and less then contract balance");
+		_payedMintFeesBalance -= withdrawAmount;
+		(bool success, ) = msg.sender.call{ value: withdrawAmount }("");
+		require(success, "Transfer failed.");
+		emit MintFeesWithdrawn(msg.sender, withdrawAmount);
+	}
 
-    /**
-     * @dev sets the transfer fee
-     */
-    function setGhostmarketMintFee(uint256 gmmf) public {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            "Caller must have admin role to set minting fee percent"
-        );
-        _ghostmarketMintingFee = gmmf;
-        emit GhostmarketMintFeeChanged(_ghostmarketMintingFee);
-    }
+	/**
+	 * @dev sets Ghostmarket mint fees as uint256
+	 * emits MintFeesChanged event
+	 */
+	function setGhostmarketMintFee(uint256 gmmf) external {
+		require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Caller must have admin role to set mint fees");
+		_ghostmarketMintFees = gmmf;
+		emit MintFeesChanged(_ghostmarketMintFees);
+	}
 
-    /**
-     * @return the ghostmarketFeeAddress
-     */
-    function ghostmarketFeeAddress() public view returns (address payable) {
-        return _ghostmarketFeeAddress;
-    }
+	/**
+	 * @return get Ghostmarket mint fees
+	 */
+	function getGhostmarketMintFees() external view returns (uint256) {
+		return _ghostmarketMintFees;
+	}
 
-    /**
-     * @return the ghostmarketMintingFee.
-     */
-    function ghostmarketMintingFee() public view returns (uint256) {
-        return _ghostmarketMintingFee;
-    }
+	/**
+	 * @dev set a NFT locked content as string
+	 */
+	function _setLockedContent(uint256 tokenId, string memory content) internal {
+		_lockedContent[tokenId] = content;
+	}
 
-    /**
-     * @dev save locked content as string for a specific _tokenId.
-     */
-    function setLockedContent(uint256 _tokenId, string memory content)
-        internal
-    {
-        _lockedContent[_tokenId] = content;
-    }
+	/**
+	 * @dev get locked content for a NFT
+	 * emits LockedContentViewed event
+	 */
+	function getLockedContent(address from, uint256 tokenId) external {
+		require(from == _msgSender(), "Caller must be the owner of the NFT");
+		_incrementCurrentLockedContentViewTracker(tokenId);
+		emit LockedContentViewed(msg.sender, tokenId, _lockedContent[tokenId]);
+	}
 
-    /**
-     * @dev locked content for a NFT can be retrived only by emitting an event
-     *
-     * example event:
-     * msgSender: 0x1a1122c2483e8f988F9a800F3A6eE316dB77e4e0 (type: address),
-     * tokenId: 0 (type: uint256),
-     * lockedContent: 'top secret' (type: string)
-     */
-    function getLockedContent(address from, uint256 _tokenId) public {
-        require(
-            from == _msgSender() || isApprovedForAll(from, _msgSender()),
-            "ERC1155: caller is not owner nor approved to get locked content"
-        );
-        _incrementCurrentLockedContentViewTracker(_tokenId);
-        emit LockedContentViewed(
-            msg.sender,
-            _tokenId,
-            _lockedContent[_tokenId]
-        );
-    }
+	/**
+	 * @dev increment a NFT locked content view tracker
+	 */
+	function _incrementCurrentLockedContentViewTracker(uint256 tokenId) internal {
+		_lockedContentViewTracker[tokenId] = _lockedContentViewTracker[tokenId] + 1;
+	}
 
-    /**
-     * @dev increment locked content view tracker
-     */
-    function _incrementCurrentLockedContentViewTracker(uint256 _tokenId)
-        private
-    {
-        _lockedContentViewTracker[_tokenId] =
-            _lockedContentViewTracker[_tokenId] +
-            1;
-    }
+	/**
+	 * @dev get a NFT current locked content view tracker
+	 */
+	function getCurrentLockedContentViewTracker(uint256 tokenId) external view returns (uint256) {
+		return _lockedContentViewTracker[tokenId];
+	}
 
-    /**
-     * @dev get the durrent locked content view tracker for specific _tokenId
-     */
-    function getCurrentLockedContentViewTracker(uint256 _tokenId)
-        public
-        view
-        returns (uint256)
-    {
-        return _lockedContentViewTracker[_tokenId];
-    }
+	/**
+	 * @dev current _tokenIdTracker
+	 */
+	function getCurrentCounter() external view returns (uint256) {
+		return _tokenIdTracker.current();
+	}
 
-    /**
-     * @dev saves the nft tokens custom attributes to contract storage
-     * emits AttributesSet event
-     */
-    function _setMetadataJson(uint256 tokenId, string memory metadataJson)
-        internal
-    {
-        _metadataJson[tokenId] = metadataJson;
-        emit AttributesSet(tokenId, metadataJson);
-    }
-
-    /**
-     * @dev get the nft token attributes with the tokenId
-     */
-    function getMetadataJson(uint256 tokenId)
-        public
-        view
-        returns (string memory)
-    {
-        return _metadataJson[tokenId];
-    }
+	/**
+	 * @dev get last minted token id /  _tokenIdTracker
+	 */
+	function getLastTokenID() external view returns (uint256) {
+		if (_tokenIdTracker.current() == 0) {
+			return _tokenIdTracker.current();
+		} else return _tokenIdTracker.current() - 1;
+	}
 }
