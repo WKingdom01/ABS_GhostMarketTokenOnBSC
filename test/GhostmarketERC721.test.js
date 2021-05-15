@@ -43,6 +43,13 @@ contract('GhostMarketERC721', async accounts => {
     expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(my_constants._t_c.BASE_URI + tokenId);
   });
 
+  it("should grant POLYNETWORK_ROLE to address", async function () {
+    this.GhostMarketERC721.grantRole(my_constants._t_c.POLYNETWORK_ROLE, transferToAccount);
+    const hasPolyRole = (await this.GhostMarketERC721.hasRole(my_constants._t_c.POLYNETWORK_ROLE, transferToAccount)).toString();
+    expect(hasPolyRole).to.equal("true");
+    this.GhostMarketERC721.mintWithURI(minter, new BN(1), "testuri", { from: transferToAccount })
+  });
+
   it("should transfer ownership of contract", async function () {
     await this.GhostMarketERC721.transferOwnership(transferToAccount);
     expect(await this.GhostMarketERC721.owner()).to.equal(transferToAccount)
