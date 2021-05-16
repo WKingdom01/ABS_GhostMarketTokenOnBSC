@@ -15,11 +15,11 @@ var my_constants = require('./include_in_tesfiles.js')
 
 // Start test block
 contract('GhostmarketERC1155', async accounts => {
-  const [minter, transferToAccount, royaltiesAccount, mintingFeeAccount, royaltiesAccount2] = accounts;
+  const [minter, transferToAccount, royaltiesAccount, anotherAccount, royaltiesAccount2] = accounts;
   console.log('minter: ', minter)
   console.log('transferToAccount: ', transferToAccount)
   console.log('royaltiesAccount: ', royaltiesAccount)
-  console.log('mintingFeeAccount: ', mintingFeeAccount)
+  console.log('anotherAccount: ', anotherAccount)
   console.log('royaltiesAccount2: ', royaltiesAccount2)
   beforeEach(async function () {
     // Deploy a new contract before the tests
@@ -77,6 +77,18 @@ contract('GhostmarketERC1155', async accounts => {
       expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal(mintAmount.toString())
       await this.GhostmarketERC1155.burn(minter, tokenId, mintAmount)
       expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal('0')
+    });
+
+    it('should revert if not owner tries to burn a NFT', async function () {
+      const mintAmount = new BN(2);
+      const data = '0x987654321';
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "")
+      //confirm its minted
+      const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal(mintAmount.toString())
+      await expectRevert(this.GhostmarketERC1155.burn(transferToAccount, tokenId, mintAmount, { from: transferToAccount }),
+        "ERC1155: burn amount exceeds balance"
+      );
     });
   });
 
@@ -244,13 +256,13 @@ contract('GhostmarketERC1155', async accounts => {
     });
 
     it("should revert if other then token owner tries to fetch locked content", async function () {
+
       await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
-
-      await this.GhostmarketERC1155.getLockedContent(minter, tokenId)
-
-      await expectRevert(this.GhostmarketERC1155.getLockedContent(transferToAccount, tokenId, {from: transferToAccount}),
-        "Caller must be the owner of the NFT."
+      //caller is the minter
+      await this.GhostmarketERC1155.getLockedContent(tokenId)
+      await expectRevert(this.GhostmarketERC1155.getLockedContent(tokenId, { from: anotherAccount }),
+        "Caller must be the owner of the NFT"
       );
     });
 
