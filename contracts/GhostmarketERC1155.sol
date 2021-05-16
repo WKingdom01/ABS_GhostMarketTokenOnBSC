@@ -20,9 +20,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		uint256 value;
 	}
 
-	// tokenId => attributes array
-	mapping(uint256 => string) internal _metadataJson;
-
 	// tokenId => royalties array
 	mapping(uint256 => Royalty[]) internal _royalties;
 
@@ -31,6 +28,9 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 
 	// tokenId => locked content view counter array
 	mapping(uint256 => uint256) internal _lockedContentViewTracker;
+    
+    // tokenId => attributes array
+	mapping(uint256 => string) internal _metadataJson;
 
 	// events
 	event RoyaltiesFeesSet(uint256 tokenId, address[] recipients, uint256[] bps);
@@ -39,7 +39,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
 	event MintFeesChanged(uint256 newValue);
 	event MintFeesPaid(address sender, uint256 value);
-	event Minted(address toAddress, uint256 tokenId, string tokenURI, uint256 amount);
+	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 amount);
 
     // mint fees balance
 	uint256 internal _payedMintFeesBalance;
@@ -61,35 +61,20 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 
 	using CountersUpgradeable for CountersUpgradeable.Counter;
 
-	// _tokenIdTracker to gnerate automated token IDs
+	// _tokenIdTracker to generate automated token IDs
 	CountersUpgradeable.Counter private _tokenIdTracker;
 
     /**
      * @dev check if msg.sender is owner of NFT id
      */
-    function _ownerOf(uint256 tokenId) internal view returns (bool) {
+    function _ownerOf(uint256 tokenId)
+        internal
+        view
+        returns (bool)
+    {
         return balanceOf(msg.sender, tokenId) != 0;
     }
 
-	/**
-	 * @dev set a NFT custom attributes to contract storage
-	 * emits AttributesSet event
-	 */
-	function _setMetadataJson(uint256 tokenId, string memory metadataJson)
-        internal
-    {
-		_metadataJson[tokenId] = metadataJson;
-		emit AttributesSet(tokenId, metadataJson);
-	}
-
-	/**
-	 * @dev increment a NFT locked content view tracker
-	 */
-	function _incrementCurrentLockedContentViewTracker(uint256 tokenId)
-        internal
-    {
-		_lockedContentViewTracker[tokenId] = _lockedContentViewTracker[tokenId] + 1;
-	}
 
     /**
 	 * @dev set a NFT royalties fees & recipients
@@ -102,11 +87,23 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		for (uint256 i = 0; i < royalties.length; i++) {
 			require(royalties[i].recipient != address(0x0), "Recipient should be present");
 			require(royalties[i].value > 0, "Royalties value should be positive");
+            require(royalties[i].value <= 50, "Royalties value should not be more than 50%");
 			_royalties[tokenId].push(royalties[i]);
 			address[] memory recipients = new address[](royalties.length);
 			uint256[] memory bps = new uint256[](royalties.length);
 			emit RoyaltiesFeesSet(tokenId, recipients, bps);
 		}
+	}
+
+    /**
+	 * @dev set a NFT custom attributes to contract storage
+	 * emits AttributesSet event
+	 */
+	function _setMetadataJson(uint256 tokenId, string memory metadataJson)
+        internal
+    {
+		_metadataJson[tokenId] = metadataJson;
+		emit AttributesSet(tokenId, metadataJson);
 	}
 
 	/**
@@ -135,10 +132,19 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	}
 
 	/**
+	 * @dev increment a NFT locked content view tracker
+	 */
+	function _incrementCurrentLockedContentViewTracker(uint256 tokenId)
+        internal
+    {
+		_lockedContentViewTracker[tokenId] = _lockedContentViewTracker[tokenId] + 1;
+	}
+
+	/**
 	 * @dev mint NFT, set royalties, set metadata json, set lockedcontent
 	 * emits Minted event
 	 */
-	function mintGhost(address to, uint256 amount, bytes memory data, Royalty[] memory royalties, string memory metadata, string memory lockedcontent)
+	function mintGhost(address to, uint256 amount, bytes memory data, Royalty[] memory royalties, string memory externalURI, string memory metadata, string memory lockedcontent)
         external
         payable
         nonReentrant
@@ -154,7 +160,8 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 			_setLockedContent(_tokenIdTracker.current(), lockedcontent);
 		}
 		_checkMintFees();
-		emit Minted(to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), amount);
+        require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
+		emit Minted(to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), externalURI, amount);
 		_tokenIdTracker.increment();
 	}
 
@@ -171,6 +178,17 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		(bool success, ) = msg.sender.call{value: withdrawAmount}("");
 		require(success, "Transfer failed.");
 		emit MintFeesWithdrawn(msg.sender, withdrawAmount);
+	}
+
+    /**
+	 * @dev bulk burn NFT
+	 */
+	function burnBulk(uint256[] memory tokensId, uint256[] memory amount)
+        external
+    {
+		for (uint256 i = 0; i < tokensId.length; i++) {
+			burn(_msgSender(), tokensId[i], amount[i]);
+		}
 	}
 
     /**
@@ -204,7 +222,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
         external
     {
         require(_ownerOf(tokenId), "Caller must be the owner of the NFT");
-   
 		_incrementCurrentLockedContentViewTracker(tokenId);
 		emit LockedContentViewed(msg.sender, tokenId, _lockedContent[tokenId]);
 	}
@@ -262,21 +279,5 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 			result[i] = royalties[i].value;
 		}
 		return result;
-	}
-
-	/**
-	 * @dev current _tokenIdTracker
-	 */
-	function getCurrentCounter() external view returns (uint256) {
-		return _tokenIdTracker.current();
-	}
-
-	/**
-	 * @dev get last minted token id /  _tokenIdTracker
-	 */
-	function getLastTokenID() external view returns (uint256) {
-		if (_tokenIdTracker.current() == 0) {
-			return _tokenIdTracker.current();
-		} else return _tokenIdTracker.current() - 1;
 	}
 }
