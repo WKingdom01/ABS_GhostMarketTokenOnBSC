@@ -136,8 +136,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
         payable
         nonReentrant
     {
-		super.mint(to, _tokenIdTracker.current(), amount, data);
-		//_setTokenURI(_tokenIdTracker.current(), _tokenIdTracker.current());
+		mint(to, _tokenIdTracker.current(), amount, data);
 		if (royalties.length > 0) {
 			_saveRoyalties(_tokenIdTracker.current(), royalties);
 		}

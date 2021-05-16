@@ -244,10 +244,12 @@ contract('GhostmarketERC1155', async accounts => {
     });
 
     it("should revert if other then token owner tries to fetch locked content", async function () {
-      await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", hiddencontent)
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
 
-      await expectRevert(this.GhostmarketERC1155.getLockedContent(transferToAccount, tokenId),
+      await this.GhostmarketERC1155.getLockedContent(minter, tokenId)
+
+      await expectRevert(this.GhostmarketERC1155.getLockedContent(transferToAccount, tokenId, {from: transferToAccount}),
         "Caller must be the owner of the NFT."
       );
     });
