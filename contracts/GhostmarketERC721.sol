@@ -76,11 +76,13 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 
 	/**
 	 * @dev set a NFT custom attributes to contract storage
+	 * emits AttributesSet event
 	 */
 	function _setMetadataJson(uint256 tokenId, string memory metadataJson)
         internal
     {
 		_metadataJson[tokenId] = metadataJson;
+		emit AttributesSet(tokenId, metadataJson);
 	}
 
     /**
