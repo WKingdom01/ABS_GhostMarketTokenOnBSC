@@ -109,7 +109,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
         internal
     {
 		if (_ghostmarketMintFees > 0) {
-			require(msg.value == _ghostmarketMintFees, "Wrong fees value sent to GhostmMrket for mint fees");
+			require(msg.value == _ghostmarketMintFees, "Wrong fees value sent to GhostMarket for mint fees");
 		}
 		if (msg.value > 0) {
 			_payedMintFeesBalance += msg.value;
