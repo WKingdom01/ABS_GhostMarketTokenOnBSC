@@ -20,9 +20,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		uint256 value;
 	}
 
-    mapping (uint256 => address) private _owners;
-
-
 	// tokenId => attributes array
 	mapping(uint256 => string) internal _metadataJson;
 
@@ -68,24 +65,10 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	CountersUpgradeable.Counter private _tokenIdTracker;
 
     /**
-     * @dev save owner address for NFT
-     */
-    function _ownerOf(uint256 tokenId) internal view returns (address) {
-        address owner = _owners[tokenId];
-        require(owner != address(0), "ERC1155: owner query for nonexistent token");
-        return owner;
-    }
-
-    /**
      * @dev check if msg.sender is owner of NFT id
      */
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return _owners[tokenId] != address(0);
-    }
-
-    function burn(address account, uint256 tokenId, uint256 value) public virtual override {
-        delete _owners[tokenId];
-        super._burn(account, tokenId, value);
+    function _ownerOf(uint256 tokenId) internal view returns (bool) {
+        return balanceOf(msg.sender, tokenId) != 0;
     }
 
 	/**
@@ -116,7 +99,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	function _saveRoyalties(uint256 tokenId, Royalty[] memory royalties)
         internal
     {
-        require(_exists(tokenId), "ERC1155: approved query for nonexistent token");
 		for (uint256 i = 0; i < royalties.length; i++) {
 			require(royalties[i].recipient != address(0x0), "Recipient should be present");
 			require(royalties[i].value > 0, "Royalties value should be positive");
@@ -162,7 +144,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
         nonReentrant
     {
 		mint(to, _tokenIdTracker.current(), amount, data);
-        _owners[_tokenIdTracker.current()] = to;
 		if (royalties.length > 0) {
 			_saveRoyalties(_tokenIdTracker.current(), royalties);
 		}
@@ -222,7 +203,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	function getLockedContent(uint256 tokenId)
         external
     {
-        require(_ownerOf(tokenId) == msg.sender, "Caller must be the owner of the NFT");
+        require(_ownerOf(tokenId), "Caller must be the owner of the NFT");
    
 		_incrementCurrentLockedContentViewTracker(tokenId);
 		emit LockedContentViewed(msg.sender, tokenId, _lockedContent[tokenId]);

@@ -246,7 +246,7 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
 
-      const { logs } = await this.GhostmarketERC1155.getLockedContent.sendTransaction(transferToAccount, tokenId, { from: transferToAccount })
+      const { logs } = await this.GhostmarketERC1155.getLockedContent.sendTransaction(tokenId, { from: transferToAccount })
 
       expectEvent.inLogs(logs, 'LockedContentViewed', {
         msgSender: transferToAccount,
@@ -273,15 +273,15 @@ contract('GhostmarketERC1155', async accounts => {
 
       const currentCounter = await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId)
       // call two times the getLockedContent function, counter should increment by 2
-      await this.GhostmarketERC1155.getLockedContent(minter, tokenId)
-      await this.GhostmarketERC1155.getLockedContent(minter, tokenId)
+      await this.GhostmarketERC1155.getLockedContent(tokenId)
+      await this.GhostmarketERC1155.getLockedContent(tokenId)
       expect(await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId)).to.be.bignumber.equal((currentCounter + 2).toString());
 
       //another NFT
       await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", "top secret2")
       const tokenId2 = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
       const currentCounter2 = await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId2)
-      await this.GhostmarketERC1155.getLockedContent(transferToAccount, tokenId2, { from: transferToAccount })
+      await this.GhostmarketERC1155.getLockedContent(tokenId2, { from: transferToAccount })
       expect(await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId2)).to.be.bignumber.equal((currentCounter2 + 1).toString());
 
     });
