@@ -17,9 +17,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		uint256 value;
 	}
 
-	// tokenId => attributes array
-	mapping(uint256 => string) internal _metadataJson;
-
 	// tokenId => royalties array
 	mapping(uint256 => Royalty[]) internal _royalties;
 
@@ -29,6 +26,9 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 	// tokenId => locked content view counter array
 	mapping(uint256 => uint256) internal _lockedContentViewTracker;
 
+	// tokenId => attributes array
+	mapping(uint256 => string) internal _metadataJson;
+
 	// events
 	event RoyaltiesFeesSet(uint256 tokenId, address[] recipients, uint256[] bps);
 	event LockedContentViewed(address msgSender, uint256 tokenId, string lockedContent);
@@ -36,7 +36,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
     event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
 	event MintFeesChanged(uint256 newValue);
 	event MintFeesPaid(address sender, uint256 value);
-	event Minted(address toAddress, uint256 tokenId, string tokenURI);
+	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI);
 
 	// mint fees balance
 	uint256 internal _payedMintFeesBalance;
@@ -54,26 +54,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		__Ownable_init_unchained();
 	}
 
-	/**
-	 * @dev set a NFT custom attributes to contract storage
-	 * emits AttributesSet event
-	 */
-	function _setMetadataJson(uint256 tokenId, string memory metadataJson)
-        internal
-    {
-		_metadataJson[tokenId] = metadataJson;
-		emit AttributesSet(tokenId, metadataJson);
-	}
-
-    /**
-	 * @dev increment a NFT locked content view tracker
-	 */
-	function _incrementCurrentLockedContentViewTracker(uint256 tokenId)
-        internal
-    {
-		_lockedContentViewTracker[tokenId] = _lockedContentViewTracker[tokenId] + 1;
-	}
-
     /**
 	 * @dev set a NFT royalties fees & recipients
 	 * fee basis points 10000 = 100%
@@ -86,11 +66,21 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		for (uint256 i = 0; i < royalties.length; i++) {
 			require(royalties[i].recipient != address(0x0), "Recipient should be present");
 			require(royalties[i].value > 0, "Royalties value should be positive");
+			require(royalties[i].value <= 50, "Royalties value should not be more than 50%");
 			_royalties[tokenId].push(royalties[i]);
 			address[] memory recipients = new address[](royalties.length);
 			uint256[] memory bps = new uint256[](royalties.length);
 			emit RoyaltiesFeesSet(tokenId, recipients, bps);
 		}
+	}
+
+	/**
+	 * @dev set a NFT custom attributes to contract storage
+	 */
+	function _setMetadataJson(uint256 tokenId, string memory metadataJson)
+        internal
+    {
+		_metadataJson[tokenId] = metadataJson;
 	}
 
     /**
@@ -119,10 +109,19 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 	}
 
 	/**
+	 * @dev increment a NFT locked content view tracker
+	 */
+	function _incrementCurrentLockedContentViewTracker(uint256 tokenId)
+        internal
+    {
+		_lockedContentViewTracker[tokenId] = _lockedContentViewTracker[tokenId] + 1;
+	}
+
+	/**
 	 * @dev mint NFT, set royalties, set metadata json, set lockedcontent
 	 * emits Minted event
 	 */
-	function mintGhost(address to, Royalty[] memory royalties, string memory metadata, string memory lockedcontent)
+	function mintGhost(address to, Royalty[] memory royalties, string memory externalURI, string memory metadata, string memory lockedcontent)
         external
         payable
         nonReentrant
@@ -139,7 +138,8 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 			_setLockedContent(tokenId, lockedcontent);
 		}
 		_checkMintFees();
-		emit Minted(to, tokenId, tokenURI(tokenId));
+		require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
+		emit Minted(to, tokenId, tokenURI(tokenId), externalURI);
 	}
 
     /**
