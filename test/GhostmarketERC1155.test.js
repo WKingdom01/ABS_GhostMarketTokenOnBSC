@@ -249,7 +249,7 @@ contract('GhostmarketERC1155', async accounts => {
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
-      console.log("minter eth balance befor: ", await web3.eth.getBalance(minter))
+      console.log("minter eth balance before: ", await web3.eth.getBalance(minter))
 
       await this.GhostmarketERC1155.withdraw(feeAddressEthBalanceAfter)
       console.log("minter eth balance after: ", await web3.eth.getBalance(minter))
@@ -268,7 +268,7 @@ contract('GhostmarketERC1155', async accounts => {
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
-      console.log("minter eth balance befor: ", await web3.eth.getBalance(minter))
+      console.log("minter eth balance before: ", await web3.eth.getBalance(minter))
 
       await expectRevert(this.GhostmarketERC1155.withdraw(feeAddressEthBalanceAfter + value),
         "Withdraw amount should be greater then 0 and less then contract balance"
@@ -287,7 +287,7 @@ contract('GhostmarketERC1155', async accounts => {
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
       console.log("feeAddress eth balance after: ", feeAddressEthBalanceAfter)
-      console.log("minter eth balance befor: ", await web3.eth.getBalance(minter))
+      console.log("minter eth balance before: ", await web3.eth.getBalance(minter))
 
 
       await expectRevert(this.GhostmarketERC1155.withdraw(feeAddressEthBalanceAfter, { from: royaltiesAccount }),
