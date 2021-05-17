@@ -30,6 +30,7 @@ contract ERC1155PresetMinterPauserUpgradeableCustom is
 	ERC1155BurnableUpgradeable,
 	ERC1155PausableUpgradeable
 {
+
 	bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 

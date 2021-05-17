@@ -171,7 +171,6 @@ contract('GhostmarketERC1155', async accounts => {
     });
 
     it('should revert if royalty is more then 50%', async function () {
-
       const mintAmount = new BN(2);
       const data = '0x987654321';
       const value = 5001

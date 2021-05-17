@@ -65,7 +65,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		for (uint256 i = 0; i < royalties.length; i++) {
 			require(royalties[i].recipient != address(0x0), "Recipient should be present");
 			require(royalties[i].value > 0, "Royalties value should be positive");
-			require(royalties[i].value <= 50, "Royalties value should not be more than 50%");
+			require(royalties[i].value <= 5000, "Royalties value should not be more than 50%");
 			_royalties[tokenId].push(royalties[i]);
 			address[] memory recipients = new address[](royalties.length);
 			uint256[] memory bps = new uint256[](royalties.length);
