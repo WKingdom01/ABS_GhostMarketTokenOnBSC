@@ -7,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Burn
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @dev {ERC1155} token, including:
@@ -23,16 +22,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
  * roles, as well as the default admin role, which will let it grant both minter
  * and pauser roles to other accounts.
  */
-contract ERC1155PresetMinterPauserUpgradeable is
-	Initializable,
+contract ERC1155PresetMinterPauserUpgradeableCustom is
 	ContextUpgradeable,
 	AccessControlEnumerableUpgradeable,
 	ERC1155BurnableUpgradeable,
 	ERC1155PausableUpgradeable
 {
-	function initialize(string memory uri) public virtual initializer {
-		__ERC1155PresetMinterPauser_init(uri);
-	}
 
 	bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -79,7 +74,7 @@ contract ERC1155PresetMinterPauserUpgradeable is
 		uint256 id,
 		uint256 amount,
 		bytes memory data
-	) public virtual {
+	) internal virtual {
 		_mint(to, id, amount, data);
 	}
 
@@ -91,7 +86,7 @@ contract ERC1155PresetMinterPauserUpgradeable is
 		uint256[] memory ids,
 		uint256[] memory amounts,
 		bytes memory data
-	) public virtual {
+	) internal virtual {
 		require(hasRole(MINTER_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have minter role to mint");
 
 		_mintBatch(to, ids, amounts, data);

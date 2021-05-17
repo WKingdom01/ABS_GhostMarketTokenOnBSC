@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  * @dev ERC1155 token with minting, burning, pause, royalties & lock content functions.
  */
 
-contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable {
 	string public name;
 	string public symbol;
 

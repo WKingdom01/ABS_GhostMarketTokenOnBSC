@@ -50,7 +50,7 @@ contract('GhostmarketERC1155', async accounts => {
   it("should mint token and have base uri", async function () {
     const mintAmount = new BN(2);
     const data = '0x987654321';
-    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "")
+    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
     const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
     console.log("uri: ", await this.GhostmarketERC1155.uri(tokenId))
     expect(await this.GhostmarketERC1155.uri(tokenId)).to.equal(my_constants._t_c.BASE_URI);
@@ -61,7 +61,7 @@ contract('GhostmarketERC1155', async accounts => {
     const data = '0x987654321';
     const newUri = 'gggghost/api/{id}.json'
     this.GhostmarketERC1155.setURI(newUri);
-    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "")
+    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
     const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
     console.log("uri: ", await this.GhostmarketERC1155.uri(tokenId))
     expect(await this.GhostmarketERC1155.uri(tokenId)).to.equal(newUri);
@@ -71,7 +71,7 @@ contract('GhostmarketERC1155', async accounts => {
     it('should burn a single NFT', async function () {
       const mintAmount = new BN(2);
       const data = '0x987654321';
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "")
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
       //confirm its minted
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
       expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal(mintAmount.toString())
@@ -79,10 +79,10 @@ contract('GhostmarketERC1155', async accounts => {
       expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal('0')
     });
 
-    it('should revert if not owner tries to burn a NFT', async function () {
+    it('should revert if not-owner tries to burn a NFT', async function () {
       const mintAmount = new BN(2);
       const data = '0x987654321';
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "")
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
       //confirm its minted
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
       expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal(mintAmount.toString())
@@ -90,33 +90,104 @@ contract('GhostmarketERC1155', async accounts => {
         "ERC1155: burn amount exceeds balance"
       );
     });
+
+    it('should burn multiple NFTs', async function () {
+      const mintAmount = new BN(20);
+      const mintAmount2 = new BN(30);
+      const data = '0x987654321';
+      const burnAmounts = [new BN(20), new BN(10)];
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
+      const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
+
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount2, data, [], "ext_uri", "", "")
+      const tokenId2 = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
+
+      //confirm its minted
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal(mintAmount.toString())
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId2)).to.be.bignumber.equal(mintAmount2.toString())
+
+      const tokenBatchIds = [tokenId, tokenId2];
+
+      await this.GhostmarketERC1155.burnBatch(
+        minter,
+        tokenBatchIds,
+        burnAmounts,
+        { from: minter },
+      )
+
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal((mintAmount - burnAmounts[0]).toString())
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId2)).to.be.bignumber.equal((mintAmount2 - burnAmounts[1]).toString())
+    });
+
+    it('should revert if not-owner tries to burn a NFTs', async function () {
+      const mintAmount = new BN(20);
+      const mintAmount2 = new BN(30);
+      const data = '0x987654321';
+      const burnAmounts = [new BN(20), new BN(10)];
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
+      const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
+
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount2, data, [], "ext_uri", "", "")
+      const tokenId2 = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
+
+      //confirm its minted
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId)).to.be.bignumber.equal(mintAmount.toString())
+      expect(await this.GhostmarketERC1155.balanceOf(minter, tokenId2)).to.be.bignumber.equal(mintAmount2.toString())
+
+      const tokenBatchIds = [tokenId, tokenId2];
+
+      await expectRevert(this.GhostmarketERC1155.burnBatch(
+        minter,
+        tokenBatchIds,
+        burnAmounts,
+        { from: anotherAccount },
+      ),
+        "ERC1155: caller is not owner nor approved"
+      );
+    });
   });
 
+  describe('mint with royalty', function () {
+    it('should mint tokens with royalty fee and address', async function () {
 
-  it('should mint tokens with royalty fee', async function () {
+      const mintAmount = new BN(2);
+      const data = '0x987654321';
+      const value = 40
+      const counter = parseInt((await this.GhostmarketERC1155.getCurrentCounter()).toString())
 
-    const mintAmount = new BN(2);
-    const data = '0x987654321';
-    const value = 88
-    const counter = parseInt((await this.GhostmarketERC1155.getCurrentCounter()).toString())
+      const result = await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [{ recipient: minter, value: value }], "ext_uri", "", "");
+      const tokenId = await this.GhostmarketERC1155.getLastTokenID()
+      expectEvent(result, 'TransferSingle', { operator: minter, from: ZERO_ADDRESS, to: transferToAccount, id: tokenId, value: mintAmount });
+      expect(parseInt(((await this.GhostmarketERC1155.getCurrentCounter()).toString()))).to.equal(counter + 1);
 
-    const receipt = await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [{ recipient: minter, value: value }], "", "");
-    const tokenId = await this.GhostmarketERC1155.getLastTokenID()
-    expectEvent(receipt, 'TransferSingle', { operator: minter, from: ZERO_ADDRESS, to: transferToAccount, id: tokenId, value: mintAmount });
-    expect(parseInt(((await this.GhostmarketERC1155.getCurrentCounter()).toString()))).to.equal(counter + 1);
+      const values = await this.GhostmarketERC1155.getRoyaltiesBps(tokenId);
+      const royaltyRecepient = await this.GhostmarketERC1155.getRoyaltiesRecipients(tokenId);
 
-    const values = await this.GhostmarketERC1155.getRoyaltiesBps(tokenId);
-    expect(values.length).to.equal(1);
-    expect(values[0]).to.be.bignumber.equal(value.toString());
-    const tokenURI = await this.GhostmarketERC1155.uri(tokenId)
-    expectEvent(receipt, 'Minted', { toAddress: transferToAccount, tokenId: tokenId, tokenURI: tokenURI, amount: mintAmount })
+      expect(values.length).to.equal(1);
+      expect(values[0]).to.be.bignumber.equal(value.toString());
+      expect(royaltyRecepient[0]).to.be.bignumber.equal(minter.toString());
+      const tokenURI = await this.GhostmarketERC1155.uri(tokenId)
+      expectEvent(result, 'Minted', { toAddress: transferToAccount, tokenId: tokenId, tokenURI: tokenURI, amount: mintAmount })
+    });
+
+    it('should revert if royalty is more then 50%', async function () {
+
+      const mintAmount = new BN(2);
+      const data = '0x987654321';
+      const value = 5001
+      const counter = parseInt((await this.GhostmarketERC1155.getCurrentCounter()).toString())
+
+      await expectRevert(this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [{ recipient: minter, value: value }], "ext_uri", "", ""),
+        "Royalties value should not be more than 50%"
+      );
+    });
   });
 
   it('everyone can mint', async function () {
     const mintAmount = new BN(2);
     const data = '0x987654321';
 
-    this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", "", { from: royaltiesAccount2 })
+    this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "ext_uri", "", { from: royaltiesAccount2 })
 
   });
 
@@ -129,7 +200,7 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.setGhostmarketMintFee(value)
       let feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostmarketERC1155.address)
 
-      this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "")
+      this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
       let feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       expect(parseInt(feeAddressEthBalanceAfter)).to.equal(parseInt(feeAddressEthBalanceBefore))
 
@@ -140,7 +211,7 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostmarketERC1155.address)
 
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value });
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value });
 
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
@@ -154,7 +225,7 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostmarketERC1155.address)
 
-      await this.GhostmarketERC1155.mintGhost(royaltiesAccount, mintAmount, data, [], "", "ts", { value: value, from: royaltiesAccount })
+      await this.GhostmarketERC1155.mintGhost(royaltiesAccount, mintAmount, data, [], "ext_uri", "", "ts", { value: value, from: royaltiesAccount })
 
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
@@ -173,9 +244,9 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostmarketERC1155.address)
 
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value, from: royaltiesAccount })
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value, from: royaltiesAccount })
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value, from: royaltiesAccount })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value, from: royaltiesAccount })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value, from: royaltiesAccount })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value, from: royaltiesAccount })
 
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
@@ -192,9 +263,9 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostmarketERC1155.address)
 
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value })
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value })
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value })
 
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
@@ -211,9 +282,9 @@ contract('GhostmarketERC1155', async accounts => {
       await this.GhostmarketERC1155.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostmarketERC1155.address)
 
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value })
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value })
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", "ts", { value: value })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value })
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "ts", { value: value })
 
       const feeAddressEthBalanceAfter = await web3.eth.getBalance(this.GhostmarketERC1155.address)
       console.log("feeAddress eth balance before: ", feeAddressEthBalanceBefore)
@@ -231,7 +302,7 @@ contract('GhostmarketERC1155', async accounts => {
   it("should mint with json string", async function () {
     const mintAmount = new BN(2);
     const data = '0x987654321';
-    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], my_constants._t_c.METADATA_JSON, "")
+    await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", my_constants._t_c.METADATA_JSON, "")
     const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
     expect(await this.GhostmarketERC1155.getMetadataJson(tokenId)).to.equal(my_constants._t_c.METADATA_JSON)
   });
@@ -243,7 +314,7 @@ contract('GhostmarketERC1155', async accounts => {
     const value = ether('0.1');
     it("should set and get locked content for nft", async function () {
 
-      await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", hiddencontent)
+      await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "ext_uri", "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
 
       const { logs } = await this.GhostmarketERC1155.getLockedContent.sendTransaction(tokenId, { from: transferToAccount })
@@ -257,7 +328,7 @@ contract('GhostmarketERC1155', async accounts => {
 
     it("should revert if other then token owner tries to fetch locked content", async function () {
 
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", hiddencontent)
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
       //caller is the minter
       await this.GhostmarketERC1155.getLockedContent(tokenId)
@@ -268,7 +339,7 @@ contract('GhostmarketERC1155', async accounts => {
 
     it("should increment locked content view count", async function () {
       const hiddencontent = "top secret"
-      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "", hiddencontent)
+      await this.GhostmarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
 
       const currentCounter = await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId)
@@ -278,7 +349,7 @@ contract('GhostmarketERC1155', async accounts => {
       expect(await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId)).to.be.bignumber.equal((currentCounter + 2).toString());
 
       //another NFT
-      await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "", "top secret2")
+      await this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [], "ext_uri", "", "top secret2")
       const tokenId2 = new BN(parseInt(await this.GhostmarketERC1155.getLastTokenID()))
       const currentCounter2 = await this.GhostmarketERC1155.getCurrentLockedContentViewTracker(tokenId2)
       await this.GhostmarketERC1155.getLockedContent(tokenId2, { from: transferToAccount })
