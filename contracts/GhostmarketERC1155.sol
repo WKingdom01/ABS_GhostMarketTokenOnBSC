@@ -38,8 +38,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	event AttributesSet(uint256 tokenId, string metadataJson);
 	event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
 	event MintFeesChanged(uint256 newValue);
-	event MintFeesPaid(address sender, uint256 value);
-	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 amount);
+	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 amount, uint256 mintFees);
 
     // mint fees balance
 	uint256 internal _payedMintFeesBalance;
@@ -127,7 +126,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		}
 		if (msg.value > 0) {
 			_payedMintFeesBalance += msg.value;
-			emit MintFeesPaid(msg.sender, msg.value);
 		}
 	}
 
@@ -161,7 +159,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		}
 		_checkMintFees();
         require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
-		emit Minted(to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), externalURI, amount);
+		emit Minted(to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), externalURI, amount, msg.value);
 		_tokenIdTracker.increment();
 	}
 
@@ -178,17 +176,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		(bool success, ) = msg.sender.call{value: withdrawAmount}("");
 		require(success, "Transfer failed.");
 		emit MintFeesWithdrawn(msg.sender, withdrawAmount);
-	}
-
-    /**
-	 * @dev bulk burn NFT
-	 */
-	function burnBulk(uint256[] memory tokensId, uint256[] memory amount)
-        external
-    {
-		for (uint256 i = 0; i < tokensId.length; i++) {
-			burn(_msgSender(), tokensId[i], amount[i]);
-		}
 	}
 
     /**
