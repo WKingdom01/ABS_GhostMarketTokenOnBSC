@@ -286,4 +286,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
     {
 		return _tokenIdTracker.current();
 	}
+
+	uint256[50] private __gap;
 }

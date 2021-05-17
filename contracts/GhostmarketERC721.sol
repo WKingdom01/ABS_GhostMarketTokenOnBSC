@@ -266,4 +266,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		}
 		return result;
 	}
+
+	uint256[50] private __gap;
 }
