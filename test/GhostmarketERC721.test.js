@@ -112,7 +112,7 @@ contract('GhostMarketERC721', async accounts => {
         expect(await this.GhostMarketERC721.ownerOf(new BN(i))).to.equal(minter)
       }
 
-      await this.GhostMarketERC721.burnBulk(tokenIDs)
+      await this.GhostMarketERC721.burnBatch(tokenIDs)
       for (const i of tokenIDs) {
         await expectRevert(
           this.GhostMarketERC721.ownerOf(new BN(i)),
@@ -135,7 +135,7 @@ contract('GhostMarketERC721', async accounts => {
       }
 
       await expectRevert(
-        this.GhostMarketERC721.burnBulk(tokenIDs, { from: transferToAccount }),
+        this.GhostMarketERC721.burnBatch(tokenIDs, { from: transferToAccount }),
         "ERC721Burnable: caller is not owner nor approved"
       );
     });

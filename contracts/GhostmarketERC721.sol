@@ -35,8 +35,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 	event AttributesSet(uint256 tokenId, string metadataJson);
     event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
 	event MintFeesChanged(uint256 newValue);
-	event MintFeesPaid(address sender, uint256 value);
-	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI);
+	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 mintFees);
 
 	// mint fees balance
 	uint256 internal _payedMintFeesBalance;
@@ -106,7 +105,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		}
 		if (msg.value > 0) {
 			_payedMintFeesBalance += msg.value;
-			emit MintFeesPaid(msg.sender, msg.value);
 		}
 	}
 
@@ -141,7 +139,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		}
 		_checkMintFees();
 		require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
-		emit Minted(to, tokenId, tokenURI(tokenId), externalURI);
+		emit Minted(to, tokenId, tokenURI(tokenId), externalURI, msg.value);
 	}
 
     /**
@@ -162,7 +160,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
     /**
 	 * @dev bulk burn NFT
 	 */
-	function burnBulk(uint256[] memory tokensId)
+	function burnBatch(uint256[] memory tokensId)
         external
     {
 		for (uint256 i = 0; i < tokensId.length; i++) {
