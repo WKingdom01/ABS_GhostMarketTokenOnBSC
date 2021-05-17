@@ -47,10 +47,10 @@ contract ERC1155PresetMinterPauserUpgradeableCustom is
 		__ERC1155Burnable_init_unchained();
 		__Pausable_init_unchained();
 		__ERC1155Pausable_init_unchained();
-		__ERC1155PresetMinterPauser_init_unchained(uri);
+		__ERC1155PresetMinterPauser_init_unchained();
 	}
 
-	function __ERC1155PresetMinterPauser_init_unchained(string memory uri) internal initializer {
+	function __ERC1155PresetMinterPauser_init_unchained() internal initializer {
 		_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
 		_setupRole(MINTER_ROLE, _msgSender());

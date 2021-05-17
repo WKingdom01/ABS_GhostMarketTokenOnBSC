@@ -103,7 +103,7 @@ contract('GhostMarketERC721', async accounts => {
       //token should not exists anymore
       await expectRevert(
         this.GhostMarketERC721.ownerOf(tokenId),
-        "evert ERC721: owner query for nonexistent token"
+        "revert ERC721: owner query for nonexistent token"
       );
     });
 
@@ -124,7 +124,7 @@ contract('GhostMarketERC721', async accounts => {
       for (const i of tokenIDs) {
         await expectRevert(
           this.GhostMarketERC721.ownerOf(new BN(i)),
-          "evert ERC721: owner query for nonexistent token"
+          "revert ERC721: owner query for nonexistent token"
         );
       }
     });
@@ -168,23 +168,23 @@ contract('GhostMarketERC721', async accounts => {
     });
 
     it('should mint tokens with royalty fees', async function () {
-      const royalityValue = 100
+      const royaltyValue = 100
       const minterAccountNFTbalance = parseInt((await this.GhostMarketERC721.balanceOf(minter)).toString())
-      const receipt = await this.GhostMarketERC721.mintGhost(minter, [{ recipient: royaltiesAccount, value: royalityValue }], "ext_uri", "", "");
+      const receipt = await this.GhostMarketERC721.mintGhost(minter, [{ recipient: royaltiesAccount, value: royaltyValue }], "ext_uri", "", "");
       const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
       expectEvent(receipt, 'Transfer', { from: ZERO_ADDRESS, to: minter, tokenId });
       expect(parseInt((await this.GhostMarketERC721.balanceOf(minter)).toString())).to.equal(minterAccountNFTbalance + 1);
       expect(await this.GhostMarketERC721.ownerOf(tokenId)).to.equal(minter);
-      const royalityValues = await this.GhostMarketERC721.getRoyaltiesBps(tokenId);
+      const royaltyValues = await this.GhostMarketERC721.getRoyaltiesBps(tokenId);
       const royaltyRecepient = await this.GhostMarketERC721.getRoyaltiesRecipients(tokenId);
-      expect(royalityValues.length).to.equal(1);
+      expect(royaltyValues.length).to.equal(1);
       expect(royaltyRecepient[0]).to.be.bignumber.equal(royaltiesAccount.toString());
-      expect(royalityValues[0]).to.be.bignumber.equal(royalityValue.toString());
+      expect(royaltyValues[0]).to.be.bignumber.equal(royaltyValue.toString());
     });
 
     it('should revert if royalty is more then 50%', async function () {
-      const royalityValue = 5001
-      await expectRevert(this.GhostMarketERC721.mintGhost(minter, [{ recipient: royaltiesAccount, value: royalityValue }], "ext_uri", "", ""),
+      const royaltyValue = 5001
+      await expectRevert(this.GhostMarketERC721.mintGhost(minter, [{ recipient: royaltiesAccount, value: royaltyValue }], "ext_uri", "", ""),
         "Royalties value should not be more than 50%"
       );
     });
@@ -243,7 +243,7 @@ contract('GhostMarketERC721', async accounts => {
   });
 
   describe('withdraw from contract', function () {
-    it('should withdraw all availabe balance from contract', async function () {
+    it('should withdraw all available balance from contract', async function () {
       const value = ether('0.1');
       await this.GhostMarketERC721.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostMarketERC721.address)
@@ -283,7 +283,6 @@ contract('GhostMarketERC721', async accounts => {
 
   describe('locked content', function () {
     const hiddencontent = "top secret"
-
     it("should set and get locked content for nft", async function () {
       this.GhostMarketERC721.mintGhost(transferToAccount, [], "ext_uri", "", hiddencontent)
       const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))

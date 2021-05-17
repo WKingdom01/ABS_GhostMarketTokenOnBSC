@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import "./ERC721PresetMinterPauserAutoIdUpgradeable.sol";
+import "./ERC721PresetMinterPauserAutoIdUpgradeableCustom.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  * @dev ERC721 token with minting, burning, pause, royalties & lock content functions.
  */
 
-contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable {
 
 	// struct for royalties fees
 	struct Royalty {
@@ -48,6 +48,15 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
         override
         initializer
     {
+		__Context_init_unchained();
+		__ERC165_init_unchained();
+		__AccessControl_init_unchained();
+		__AccessControlEnumerable_init_unchained();
+		__ERC721Enumerable_init_unchained();
+		__ERC721Burnable_init_unchained();
+		__Pausable_init_unchained();
+		__ERC721Pausable_init_unchained();
+		__ERC721URIStorage_init_unchained();
 		__ERC721_init_unchained(name, symbol);
 		__ERC721PresetMinterPauserAutoId_init_unchained(uri);
 		__Ownable_init_unchained();

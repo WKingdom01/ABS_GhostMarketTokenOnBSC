@@ -52,8 +52,15 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
         virtual
         initializer
     {
+		__Context_init_unchained();
+		__ERC165_init_unchained();
+		__AccessControl_init_unchained();
+		__AccessControlEnumerable_init_unchained();
 		__ERC1155_init_unchained(uri);
-		__ERC1155PresetMinterPauser_init_unchained(uri);
+		__ERC1155Burnable_init_unchained();
+		__Pausable_init_unchained();
+		__ERC1155Pausable_init_unchained();
+		__ERC1155PresetMinterPauser_init_unchained();
 		__Ownable_init_unchained();
 		name = _name;
 		symbol = _symbol;
@@ -268,14 +275,15 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		}
 		return result;
 	}
-	
-	/**
-   * @dev current _tokenIdTracker
-   */
-  function getCurrentCounter() 
-		external 
-		view 
-		returns (uint256) {
-    	return _tokenIdTracker.current();
-  }
+
+  /**
+	 * @dev current _tokenIdTracker
+	 */
+	function getCurrentCounter()
+        external
+        view
+        returns (uint256)
+    {
+		return _tokenIdTracker.current();
+	}
 }
