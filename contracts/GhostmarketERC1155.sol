@@ -268,4 +268,14 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		}
 		return result;
 	}
+	
+	/**
+   * @dev current _tokenIdTracker
+   */
+  function getCurrentCounter() 
+		external 
+		view 
+		returns (uint256) {
+    	return _tokenIdTracker.current();
+  }
 }
