@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Burn
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @dev {ERC1155} token, including:
@@ -23,12 +24,12 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
  * and pauser roles to other accounts.
  */
 contract ERC1155PresetMinterPauserUpgradeableCustom is
+	Initializable,
 	ContextUpgradeable,
 	AccessControlEnumerableUpgradeable,
 	ERC1155BurnableUpgradeable,
 	ERC1155PausableUpgradeable
 {
-
 	bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
@@ -56,7 +57,7 @@ contract ERC1155PresetMinterPauserUpgradeableCustom is
 	}
 
 	function setURI(string memory uri_) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have admin role to set new uri");
+		require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "ERC1155PresetMinterPauser: must have admin role to set new uri");
 		_setURI(uri_);
 	}
 

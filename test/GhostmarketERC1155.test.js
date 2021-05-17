@@ -175,7 +175,6 @@ contract('GhostmarketERC1155', async accounts => {
       const mintAmount = new BN(2);
       const data = '0x987654321';
       const value = 5001
-      const counter = parseInt((await this.GhostmarketERC1155.getCurrentCounter()).toString())
 
       await expectRevert(this.GhostmarketERC1155.mintGhost(transferToAccount, mintAmount, data, [{ recipient: minter, value: value }], "ext_uri", "", ""),
         "Royalties value should not be more than 50%"
