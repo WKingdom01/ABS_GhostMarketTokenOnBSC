@@ -7,7 +7,8 @@ const {
   LOCAL_TEST_MNEMONIC,
   RINKEBY_PRIVATE_KEYS,
   BSC_MAINNET_PRIVATE_KEY,
-  BSC_TESTNET_PRIVATE_KEY } = require('./.secrets.json');
+  BSC_TESTNET_PRIVATE_KEY,
+  BSCSCAN_API_KEY } = require('./.secrets.json');
 /**
  * Use this file to configure your truffle project. It's seeded with some
  * common settings for different networks and features like migrations,
@@ -84,7 +85,7 @@ module.exports = {
           "https://bsc-dataseed1.binance.org:443"
         );
       },
-      network_id: "*",
+      network_id: "56",
       gas: 10000000,
       gasPrice: 10000000000,
     },
@@ -95,7 +96,7 @@ module.exports = {
           "https://data-seed-prebsc-2-s1.binance.org:8545/"
         );
       },
-      network_id: "*",
+      network_id: "97",
       gas: 10000000,
       gasPrice: 10000000000,
     },
@@ -103,13 +104,13 @@ module.exports = {
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
-    // timeout: 100000
+    timeout: 100000
   },
 
   // Configure your compilers
   compilers: {
     solc: {
-      version: "0.8.3",    // Fetch exact version from solc-bin (default: truffle's version)
+      version: "0.8.4",    // Fetch exact version from solc-bin (default: truffle's version)
       settings: {          // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
           enabled: true,
@@ -120,5 +121,8 @@ module.exports = {
   },
   plugins: [
     'truffle-plugin-verify'
-  ]
+  ],
+  api_keys: {
+    bscscan: BSCSCAN_API_KEY
+  }
 };
