@@ -3,7 +3,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 
 const GHOSTMARKET_ERC721_ARTIFACT = artifacts.require("GhostMarketERC721");
-const GHOSTMARKET_ERC1155 = artifacts.require("GhostmarketERC1155");
+const GHOSTMARKET_ERC1155 = artifacts.require("GhostMarketERC1155");
 const TOKEN_NAME = "GhostMarket"
 const TOKEN_SYMBOL = "GHOST"
 const BASE_URI = "https://ghostmarket.io/"

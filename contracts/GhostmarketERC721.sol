@@ -135,6 +135,8 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
         payable
         nonReentrant
     {
+		require(to != address(0x0), "to can't be empty");
+		require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
 		mint(to);
 		uint256 tokenId = getLastTokenID();
 		if (royalties.length > 0) {
@@ -147,7 +149,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 			_setLockedContent(tokenId, lockedcontent);
 		}
 		_checkMintFees();
-		require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
 		emit Minted(to, tokenId, tokenURI(tokenId), externalURI, msg.value);
 	}
 
