@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
@@ -209,5 +208,5 @@ contract ERC721PresetMinterPauserAutoIdUpgradeableCustom is
 		return super.supportsInterface(interfaceId);
 	}
 
-	uint256[48] private __gap;
+	uint256[50] private __gap;
 }
