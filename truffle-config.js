@@ -47,23 +47,17 @@ module.exports = {
    */
 
   networks: {
+    test: {
+      host: "127.0.0.1",     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: "*",
+    },
     development: {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 7545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
       gas: 6000000,
       gasPrice: 10,
-    },
-    test: {
-      provider: function () {
-        return new HDWalletProvider({
-          mnemonic: LOCAL_TEST_MNEMONIC,
-          providerOrUrl: "http://127.0.0.1:8545",
-          network_id: "*"
-        })
-      },
-      network_id: "*",
-      skipDryRun: false
     },
     rinkeby: {
       provider: function () {
@@ -94,6 +88,8 @@ module.exports = {
         return new HDWalletProvider(
           BSC_TESTNET_PRIVATE_KEY,
           "https://data-seed-prebsc-2-s1.binance.org:8545/"
+          // alternative RPC
+          //"https://data-seed-prebsc-1-s3.binance.org:8545"
         );
       },
       network_id: "97",

@@ -55,7 +55,12 @@ truffle deploy --network mainnet
 
 tests can be run with:
 ```
-truffle test
+truffle test --network test
+```
+and 
+
+```
+runGhostMarketERC721_tests.sh
 ```
 ### running individual tests
 

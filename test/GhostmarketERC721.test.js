@@ -1,6 +1,6 @@
 // Load dependencies
 const { expect } = require('chai');
-const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   BN,           // Big Number support
   constants,    // Common constants, like the zero address and largest integers
@@ -13,7 +13,7 @@ const { ZERO_ADDRESS } = constants;
 
 const { GHOSTMARKET_ERC721_ARTIFACT, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, METADATA_JSON, POLYNETWORK_ROLE } = require('./include_in_tesfiles.js')
 
-
+const GhostMarketERC721_V2 = artifacts.require("TestGhostMarketERC721_V2");
 // Start test block
 contract('GhostMarketERC721', async accounts => {
   const [minter, transferToAccount, royaltiesAccount, mintingFeeAccount] = accounts;
@@ -37,6 +37,26 @@ contract('GhostMarketERC721', async accounts => {
   it("symbol should be " + TOKEN_SYMBOL, async function () {
     expect((await this.GhostMarketERC721.symbol()).toString()).to.equal(TOKEN_SYMBOL);
   });
+
+  it("should upgrade contract", async function () {
+    const mintFeeValue = ether('0.1')
+    this.GhostMarketERC721.setGhostmarketMintFee(mintFeeValue)
+
+    //upgrade
+    this.GhostMarketERC721_V2 = await upgradeProxy(this.GhostMarketERC721.address, GhostMarketERC721_V2);
+
+    //test new function
+    assert.equal(await this.GhostMarketERC721_V2.getSomething(), 10);
+
+    //name and symbol should be the same
+    expect((await this.GhostMarketERC721_V2.name()).toString()).to.equal(TOKEN_NAME);
+    expect((await this.GhostMarketERC721_V2.symbol()).toString()).to.equal(TOKEN_SYMBOL);
+
+    // increment already set _ghostmarketMintFees value
+    result = await this.GhostMarketERC721_V2.incrementMintingFee()
+    expectEvent(result, 'NewMintFeeIncremented', { newValue: '100000000000000001'  })
+
+  })
 
   it("should have base uri + token uri", async function () {
     await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
