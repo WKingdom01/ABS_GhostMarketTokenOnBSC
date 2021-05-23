@@ -4,12 +4,13 @@ pragma solidity ^0.8.4;
 import "./ERC721PresetMinterPauserAutoIdUpgradeableCustom.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 
 /**
  * @dev ERC721 token with minting, burning, pause, royalties & lock content functions.
  */
 
-contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC165StorageUpgradeable {
 
 	// struct for royalties fees
 	struct Royalty {
@@ -33,7 +34,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 	event RoyaltiesFeesSet(uint256 tokenId, address[] recipients, uint256[] bps);
 	event LockedContentViewed(address msgSender, uint256 tokenId, string lockedContent);
 	event AttributesSet(uint256 tokenId, string metadataJson);
-    event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
+  event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
 	event MintFeesChanged(uint256 newValue);
 	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 mintFees);
 
@@ -42,6 +43,11 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 
 	// mint fees value
 	uint256 internal _ghostmarketMintFees;
+
+	/**
+	 * bytes4(keccak256(_INTERFACE_ID_ERC721_GHOSTMARKET)) == 0xee40ffc1
+	 */
+	bytes4 private constant _INTERFACE_ID_ERC721_GHOSTMARKET = 0xee40ffc1;
 
 	function initialize(string memory name, string memory symbol, string memory uri)
         public
@@ -60,6 +66,14 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		__ERC721_init_unchained(name, symbol);
 		__ERC721PresetMinterPauserAutoId_init_unchained(uri);
 		__Ownable_init_unchained();
+		_registerInterface(_INTERFACE_ID_ERC721_GHOSTMARKET);
+	}
+
+	/**
+	 * @dev See {IERC165-supportsInterface}.
+	 */
+	function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721PresetMinterPauserAutoIdUpgradeableCustom, ERC165StorageUpgradeable) returns (bool) {
+		return super.supportsInterface(interfaceId);
 	}
 
     /**

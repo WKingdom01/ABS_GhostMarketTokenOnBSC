@@ -38,6 +38,10 @@ contract('GhostMarketERC721', async accounts => {
     expect((await this.GhostMarketERC721.symbol()).toString()).to.equal(TOKEN_SYMBOL);
   });
 
+  it("should support interface " + 0x94407210, async function () {
+    expect((await this.GhostMarketERC721.supportsInterface("0xee40ffc1")).toString()).to.equal('true');
+  });
+
   it("should upgrade contract", async function () {
     const mintFeeValue = ether('0.1')
     this.GhostMarketERC721.setGhostmarketMintFee(mintFeeValue)

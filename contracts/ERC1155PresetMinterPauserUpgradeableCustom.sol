@@ -52,7 +52,6 @@ contract ERC1155PresetMinterPauserUpgradeableCustom is
 
 	function __ERC1155PresetMinterPauser_init_unchained() internal initializer {
 		_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-
 		_setupRole(MINTER_ROLE, _msgSender());
 		_setupRole(PAUSER_ROLE, _msgSender());
 	}

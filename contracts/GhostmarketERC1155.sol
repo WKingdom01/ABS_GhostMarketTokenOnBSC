@@ -6,12 +6,13 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 
 /**
  * @dev ERC1155 token with minting, burning, pause, royalties & lock content functions.
  */
 
-contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC165StorageUpgradeable {
 	string public name;
 	string public symbol;
 
@@ -47,6 +48,11 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	// mint fees value
 	uint256 internal _ghostmarketMintFees;
 
+	/**
+	 * bytes4(keccak256(_INTERFACE_ID_ERC1155_GHOSTMARKET)) == 0x94407210
+	 */
+	bytes4 private constant _INTERFACE_ID_ERC1155_GHOSTMARKET = 0x94407210;
+
 	function initialize(string memory _name, string memory _symbol, string memory uri)
         public
         virtual
@@ -62,6 +68,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		__ERC1155Pausable_init_unchained();
 		__ERC1155PresetMinterPauser_init_unchained();
 		__Ownable_init_unchained();
+		_registerInterface(_INTERFACE_ID_ERC1155_GHOSTMARKET);
 		name = _name;
 		symbol = _symbol;
 	}
@@ -71,16 +78,23 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	// _tokenIdTracker to generate automated token IDs
 	CountersUpgradeable.Counter private _tokenIdTracker;
 
-    /**
-     * @dev check if msg.sender is owner of NFT id
-     */
-    function _ownerOf(uint256 tokenId)
-        internal
-        view
-        returns (bool)
-    {
-        return balanceOf(msg.sender, tokenId) != 0;
-    }
+	/**
+	 * @dev See {IERC165-supportsInterface}.
+	 */
+	function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155PresetMinterPauserUpgradeableCustom, ERC165StorageUpgradeable) returns (bool) {
+		return super.supportsInterface(interfaceId);
+	}
+	
+	/**
+		* @dev check if msg.sender is owner of NFT id
+		*/
+	function _ownerOf(uint256 tokenId)
+			internal
+			view
+			returns (bool)
+	{
+			return balanceOf(msg.sender, tokenId) != 0;
+	}
 
 
     /**

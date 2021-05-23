@@ -9,8 +9,10 @@ pragma solidity ^0.8.4;
 import "../contracts/ERC721PresetMinterPauserAutoIdUpgradeableCustom.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpgradeable.sol";
 
-contract TestGhostMarketERC721_V2 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+
+contract TestGhostMarketERC721_V2 is Initializable, ERC721PresetMinterPauserAutoIdUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC165StorageUpgradeable {
 
 	// struct for royalties fees
 	struct Royalty {
@@ -45,6 +47,10 @@ contract TestGhostMarketERC721_V2 is Initializable, ERC721PresetMinterPauserAuto
 	// mint fees value
 	uint256 internal _ghostmarketMintFees;
 
+	/**
+	 * bytes4(keccak256(_INTERFACE_ID_ERC721_GHOSTMARKET)) == 0xee40ffc1
+	 */
+	bytes4 private constant _INTERFACE_ID_ERC721_GHOSTMARKET = 0xee40ffc1;
 
 	function initialize(string memory name, string memory symbol, string memory uri)
         public
@@ -63,16 +69,24 @@ contract TestGhostMarketERC721_V2 is Initializable, ERC721PresetMinterPauserAuto
 		__ERC721_init_unchained(name, symbol);
 		__ERC721PresetMinterPauserAutoId_init_unchained(uri);
 		__Ownable_init_unchained();
+		_registerInterface(_INTERFACE_ID_ERC721_GHOSTMARKET);
 	}
 
-    function getSomething() external pure returns (uint) {
-        return 10;
-    }
+	function getSomething() external pure returns (uint) {
+			return 10;
+	}
 
-    function incrementMintingFee() external {
-        _ghostmarketMintFees2 = _ghostmarketMintFees + 1;
-        emit NewMintFeeIncremented(_ghostmarketMintFees2);
-    }
+	function incrementMintingFee() external {
+			_ghostmarketMintFees2 = _ghostmarketMintFees + 1;
+			emit NewMintFeeIncremented(_ghostmarketMintFees2);
+	}
+
+	/**
+	 * @dev See {IERC165-supportsInterface}.
+	 */
+	function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721PresetMinterPauserAutoIdUpgradeableCustom, ERC165StorageUpgradeable) returns (bool) {
+		return super.supportsInterface(interfaceId);
+	}
 
     /**
 	 * @dev set a NFT royalties fees & recipients
@@ -282,6 +296,6 @@ contract TestGhostMarketERC721_V2 is Initializable, ERC721PresetMinterPauserAuto
 
 	uint256[50] private __gap;
 
-    uint256 internal _ghostmarketMintFees2;
+  uint256 internal _ghostmarketMintFees2;
 
 }

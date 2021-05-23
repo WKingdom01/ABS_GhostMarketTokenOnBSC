@@ -40,6 +40,10 @@ contract('GhostMarketERC1155', async accounts => {
     expect((await this.GhostMarketERC1155.symbol()).toString()).to.equal(TOKEN_SYMBOL);
   });
 
+  it("should support interface " + 0x94407210, async function () {
+    expect((await this.GhostMarketERC1155.supportsInterface("0x9440721")).toString()).to.equal('true');
+  });
+
   it("should have counter = 0", async function () {
     expect((await this.GhostMarketERC1155.getCurrentCounter())).to.be.bignumber.equal('0');
   });
