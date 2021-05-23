@@ -230,7 +230,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	function getLockedContent(uint256 tokenId)
         external
     {
-        require(_ownerOf(tokenId), "Caller must be the owner of the NFT");
+    require(_ownerOf(tokenId), "Caller must be the owner of the NFT");
 		_incrementCurrentLockedContentViewTracker(tokenId);
 		emit LockedContentViewed(msg.sender, tokenId, _lockedContent[tokenId]);
 	}

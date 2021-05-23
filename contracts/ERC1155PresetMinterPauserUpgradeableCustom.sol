@@ -33,6 +33,7 @@ contract ERC1155PresetMinterPauserUpgradeableCustom is
 
 	bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 	bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+	bytes32 public constant POLYNETWORK_ROLE = keccak256("POLYNETWORK_ROLE");
 
 	/**
 	 * @dev Grants `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, and `PAUSER_ROLE` to the account that
@@ -54,6 +55,21 @@ contract ERC1155PresetMinterPauserUpgradeableCustom is
 		_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 		_setupRole(MINTER_ROLE, _msgSender());
 		_setupRole(PAUSER_ROLE, _msgSender());
+		_setupRole(POLYNETWORK_ROLE, _msgSender());
+	}
+
+	/**
+	 * @dev polynetwork CrossChainNFTMapping
+	 */
+	function mintWithURI(
+		address to,
+		uint256 tokenId,
+		string memory uri,
+		uint256 amount
+	) external {
+		require(hasRole(POLYNETWORK_ROLE, _msgSender()), "mintWithURI: must have POLYNETWORK_ROLE role to mint");
+		_mint(to, tokenId, amount, "");
+		_setURI(uri);
 	}
 
 	function setURI(string memory uri_) external {

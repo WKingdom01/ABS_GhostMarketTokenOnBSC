@@ -58,41 +58,42 @@ contract('GhostMarketERC721', async accounts => {
 
     // increment already set _ghostmarketMintFees value
     result = await this.GhostMarketERC721_V2.incrementMintingFee()
-    expectEvent(result, 'NewMintFeeIncremented', { newValue: '100000000000000001'  })
+    expectEvent(result, 'NewMintFeeIncremented', { newValue: '100000000000000001' })
 
   })
-
-  it("should have base uri + token uri", async function () {
-    await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
-    const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
-    expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + tokenId);
-  });
-
-  it("should grant POLYNETWORK_ROLE to address", async function () {
-    this.GhostMarketERC721.grantRole(POLYNETWORK_ROLE, transferToAccount);
-    const hasPolyRole = (await this.GhostMarketERC721.hasRole(POLYNETWORK_ROLE, transferToAccount)).toString();
-    expect(hasPolyRole).to.equal("true");
-    this.GhostMarketERC721.mintWithURI(minter, new BN(1), "testuri", { from: transferToAccount })
-  });
 
   it("should transfer ownership of contract", async function () {
     await this.GhostMarketERC721.transferOwnership(transferToAccount);
     expect(await this.GhostMarketERC721.owner()).to.equal(transferToAccount)
   });
 
-  it("should mintWithURI and have given tokenURI", async function () {
+  it("should have base uri + token uri", async function () {
+    await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
     const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
-    const specialuri = "special-uri"
-    await this.GhostMarketERC721.mintWithURI(minter, tokenId, specialuri)
-    expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + specialuri);
+    expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + tokenId);
   });
+  describe('mintWithURI', function () {
+    it("should grant POLYNETWORK_ROLE to address", async function () {
+      this.GhostMarketERC721.grantRole(POLYNETWORK_ROLE, transferToAccount);
+      const hasPolyRole = (await this.GhostMarketERC721.hasRole(POLYNETWORK_ROLE, transferToAccount)).toString();
+      expect(hasPolyRole).to.equal("true");
+      this.GhostMarketERC721.mintWithURI(minter, new BN(1), "testuri", { from: transferToAccount })
+    });
 
-  it("should revert if minter using mintWithURI function has not the POLYNETWORK_ROLE", async function () {
-    const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
-    await expectRevert(
-      this.GhostMarketERC721.mintWithURI(minter, tokenId, tokenId, { from: transferToAccount }),
-      "mintWithURI: must have POLYNETWORK_ROLE role to mint"
-    );
+    it("should mintWithURI and have given tokenURI", async function () {
+      const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
+      const specialuri = "special-uri"
+      await this.GhostMarketERC721.mintWithURI(minter, tokenId, specialuri)
+      expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + specialuri);
+    });
+
+    it("should revert if minter using mintWithURI function has not the POLYNETWORK_ROLE", async function () {
+      const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
+      await expectRevert(
+        this.GhostMarketERC721.mintWithURI(minter, tokenId, tokenId, { from: transferToAccount }),
+        "mintWithURI: must have POLYNETWORK_ROLE role to mint"
+      );
+    });
   });
 
   it("should revert if externalURI is empty", async function () {

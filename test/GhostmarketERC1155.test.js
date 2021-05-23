@@ -11,7 +11,7 @@ const {
 
 const { ZERO_ADDRESS } = constants;
 
-const { GHOSTMARKET_ERC1155, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, METADATA_JSON, getLastTokenID } = require('./include_in_tesfiles.js')
+const { GHOSTMARKET_ERC1155, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, METADATA_JSON, getLastTokenID, POLYNETWORK_ROLE } = require('./include_in_tesfiles.js')
 console.log('testo: ', "testo");
 // Start test block
 contract('GhostMarketERC1155', async accounts => {
@@ -67,6 +67,31 @@ contract('GhostMarketERC1155', async accounts => {
     const tokenId = await getLastTokenID(this.GhostMarketERC1155)
     console.log("uri: ", await this.GhostMarketERC1155.uri(tokenId))
     expect(await this.GhostMarketERC1155.uri(tokenId)).to.equal(newUri);
+  });
+
+  describe('mintWithURI', function () {
+    it("should grant POLYNETWORK_ROLE to address", async function () {
+      await this.GhostMarketERC1155.grantRole(POLYNETWORK_ROLE, transferToAccount);
+      const hasPolyRole = (await this.GhostMarketERC1155.hasRole(POLYNETWORK_ROLE, transferToAccount)).toString();
+      expect(hasPolyRole).to.equal("true");
+    });
+
+    it("should mintWithURI and have given tokenURI", async function () {
+      const mintAmount = new BN(20);
+      const tokenId = await getLastTokenID(this.GhostMarketERC1155)
+      const specialuri = "special-uri"
+      await this.GhostMarketERC1155.mintWithURI(minter, tokenId, specialuri, mintAmount)
+      expect(await this.GhostMarketERC1155.uri(tokenId)).to.equal(specialuri);
+    });
+
+    it("should revert if minter using mintWithURI function has not the POLYNETWORK_ROLE", async function () {
+      const mintAmount = new BN(20);
+      const tokenId = await getLastTokenID(this.GhostMarketERC1155)
+      await expectRevert(
+        this.GhostMarketERC1155.mintWithURI(minter, tokenId, tokenId, mintAmount, { from: transferToAccount }),
+        "mintWithURI: must have POLYNETWORK_ROLE role to mint"
+      );
+    });
   });
 
   describe('burn NFT', function () {
