@@ -6,9 +6,11 @@ const {
   INFURA_PROJECT_ID,
   LOCAL_TEST_MNEMONIC,
   RINKEBY_PRIVATE_KEYS,
+  ROPSTEN_PRIVATE_KEYS,
   BSC_MAINNET_PRIVATE_KEY,
   BSC_TESTNET_PRIVATE_KEY,
-  BSCSCAN_API_KEY } = require('./.secrets.json');
+  BSCSCAN_MAINNET_API_KEY,
+  BSCSCAN_TESTNET_API_KEY } = require('./.secrets.json');
 /**
  * Use this file to configure your truffle project. It's seeded with some
  * common settings for different networks and features like migrations,
@@ -55,7 +57,7 @@ module.exports = {
     development: {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 7545,            // Standard Ethereum port (default: none)
-      network_id: "*",       // Any network (default: none)
+      network_id: "*",
       gas: 6000000,
       gasPrice: 10,
     },
@@ -72,16 +74,18 @@ module.exports = {
       networkCheckTimeout: 10000,
       skipDryRun: false
     },
-    mainnet: {
+    ropsten: {
       provider: function () {
-        return new HDWalletProvider(
-          BSC_MAINNET_PRIVATE_KEY,
-          "https://bsc-dataseed1.binance.org:443"
-        );
+        return new HDWalletProvider({
+          privateKeys: ROPSTEN_PRIVATE_KEYS,
+          providerOrUrl: "https://rinkeby.infura.io/v3/" + INFURA_PROJECT_ID,
+          numberOfAddresses: 2,
+          derivationPath: "m/44'/60'/0'/0"
+        })
       },
-      network_id: "56",
-      gas: 10000000,
-      gasPrice: 10000000000,
+      network_id: 3,
+      networkCheckTimeout: 10000,
+      skipDryRun: false
     },
     bsctestnet: {
       provider: function () {
@@ -93,6 +97,19 @@ module.exports = {
         );
       },
       network_id: "97",
+      gas: 10000000,
+      gasPrice: 10000000000,
+    },
+    bscmainnet: {
+      provider: function () {
+        return new HDWalletProvider(
+          BSC_MAINNET_PRIVATE_KEY,
+          "https://bsc-dataseed.binance.org/"
+          // alternative RPC
+          //"https://bsc-dataseed1.defibit.io/"
+        );
+      },
+      network_id: "56",
       gas: 10000000,
       gasPrice: 10000000000,
     },
@@ -119,6 +136,6 @@ module.exports = {
     'truffle-plugin-verify'
   ],
   api_keys: {
-    bscscan: BSCSCAN_API_KEY
+    bscscan: BSCSCAN_TESTNET_API_KEY
   }
 };
