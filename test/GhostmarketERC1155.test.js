@@ -40,8 +40,12 @@ contract('GhostMarketERC1155', async accounts => {
     expect((await this.GhostMarketERC1155.symbol()).toString()).to.equal(TOKEN_SYMBOL);
   });
 
-  it("should support interface " + 0x94407210, async function () {
+  it("should support interface _INTERFACE_ID_ERC1155_GHOSTMARKET", async function () {
     expect((await this.GhostMarketERC1155.supportsInterface("0x9440721")).toString()).to.equal('true');
+  });
+
+  it("should support interface _GHOSTMARKET_NFT_ROYALTIES", async function () {
+    expect((await this.GhostMarketERC1155.supportsInterface("0xe42093a6")).toString()).to.equal('true');
   });
 
   it("should have counter = 0", async function () {

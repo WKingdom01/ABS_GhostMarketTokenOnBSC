@@ -38,8 +38,12 @@ contract('GhostMarketERC721', async accounts => {
     expect((await this.GhostMarketERC721.symbol()).toString()).to.equal(TOKEN_SYMBOL);
   });
 
-  it("should support interface " + 0x94407210, async function () {
+  it("should support interface _INTERFACE_ID_ERC721_GHOSTMARKET", async function () {
     expect((await this.GhostMarketERC721.supportsInterface("0xee40ffc1")).toString()).to.equal('true');
+  });
+
+  it("should support interface _GHOSTMARKET_NFT_ROYALTIES", async function () {
+    expect((await this.GhostMarketERC721.supportsInterface("0xe42093a6")).toString()).to.equal('true');
   });
 
   it("should upgrade contract", async function () {

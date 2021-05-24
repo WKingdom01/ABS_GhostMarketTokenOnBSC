@@ -53,6 +53,11 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	 */
 	bytes4 private constant _INTERFACE_ID_ERC1155_GHOSTMARKET = 0x94407210;
 
+	/**
+	 * bytes4(keccak256(_GHOSTMARKET_NFT_ROYALTIES)) == 0xee40ffc1
+	 */
+	bytes4 constant _GHOSTMARKET_NFT_ROYALTIES = 0xe42093a6;
+
 	function initialize(string memory _name, string memory _symbol, string memory uri)
         public
         virtual
@@ -69,6 +74,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		__ERC1155PresetMinterPauser_init_unchained();
 		__Ownable_init_unchained();
 		_registerInterface(_INTERFACE_ID_ERC1155_GHOSTMARKET);
+		_registerInterface(_GHOSTMARKET_NFT_ROYALTIES);
 		name = _name;
 		symbol = _symbol;
 	}
