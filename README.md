@@ -4,10 +4,10 @@
 Coming soon...
 ## Technical Information
 
-Upgradable ERC721 Contract.
+Upgradable ERC721 & ERC1155 Contract.
 
 Using OpenZeppelin contracts.
-### compiling contracts
+### Compiling contracts
 ```
 truffle compile --all
 ```
@@ -39,14 +39,14 @@ truffle deploy --network <TESTNET_NAME>
 
 mainnet deployment:
 ```
-truffle deploy --network mainnet
+truffle deploy --network <MAINNET_NAME>
 ```
 
 ## Testing
 
 tests can be run with:
 ```
-truffle test --network test
+truffle test --network <NETWORK_NAME>
 ```
 and 
 
