@@ -222,7 +222,7 @@ contract('GhostMarketERC1155', async accounts => {
   });
 
   describe('withdraw from contract', function () {
-    it('should withdraw all availabe balance from contract', async function () {
+    it('should withdraw all available balance from contract', async function () {
       const value = ether('0.1');
       await this.GhostMarketERC1155.setGhostmarketMintFee(value)
       const feeAddressEthBalanceBefore = await web3.eth.getBalance(this.GhostMarketERC1155.address)

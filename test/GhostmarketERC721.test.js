@@ -154,7 +154,7 @@ contract('GhostMarketERC721', async accounts => {
       }
     });
 
-    it('should revert while trying to burn multiple NFTs, caller is not owner nor approved', async function () {
+    it('should revert if not-owner tries to burn a NFTs', async function () {
       const tokenIDs = [0]
       for (const i of tokenIDs) {
         await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
