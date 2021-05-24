@@ -77,6 +77,7 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 		_registerInterface(_GHOSTMARKET_NFT_ROYALTIES);
 		name = _name;
 		symbol = _symbol;
+		_tokenIdTracker.increment();
 	}
 
 	using CountersUpgradeable for CountersUpgradeable.Counter;

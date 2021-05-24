@@ -48,8 +48,8 @@ contract('GhostMarketERC1155', async accounts => {
     expect((await this.GhostMarketERC1155.supportsInterface("0xe42093a6")).toString()).to.equal('true');
   });
 
-  it("should have counter = 0", async function () {
-    expect((await this.GhostMarketERC1155.getCurrentCounter())).to.be.bignumber.equal('0');
+  it("should have initial counter = 1", async function () {
+    expect((await this.GhostMarketERC1155.getCurrentCounter())).to.be.bignumber.equal('1');
   });
 
   it("should transfer ownership of contract", async function () {

@@ -76,6 +76,15 @@ contract('GhostMarketERC721', async accounts => {
     const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
     expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + tokenId);
   });
+
+  it("should transfer to another account", async function () {
+    await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
+    const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
+    this.GhostMarketERC721.safeTransferFrom(minter, transferToAccount, tokenId);
+    expect(await this.GhostMarketERC721.balanceOf(transferToAccount)).to.be.bignumber.equal('1')
+    expect(await this.GhostMarketERC721.balanceOf(minter)).to.be.bignumber.equal('0')
+  });
+
   describe('mintWithURI', function () {
     it("should grant POLYNETWORK_ROLE to address", async function () {
       this.GhostMarketERC721.grantRole(POLYNETWORK_ROLE, transferToAccount);
@@ -109,9 +118,9 @@ contract('GhostMarketERC721', async accounts => {
 
   it("should mintGhost with new URI", async function () {
     const newURI = "new.app/"
-    const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
     await this.GhostMarketERC721.setBaseTokenURI(newURI);
     await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
+    const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
     expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(newURI + tokenId);
   });
 
@@ -137,14 +146,14 @@ contract('GhostMarketERC721', async accounts => {
     });
 
     it('should burn multiple NFTs', async function () {
-      const tokenIDs = [0, 1, 2, 3, 4]
+      const tokenIDs = [1, 2, 3, 4, 5]
       for (const i of tokenIDs) {
         await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
       }
 
       //confirm minted tokens
       const currentCounter = await this.GhostMarketERC721.getCurrentCounter()
-      expect(await this.GhostMarketERC721.balanceOf(minter)).to.be.bignumber.equal(currentCounter)
+      expect(await this.GhostMarketERC721.balanceOf(minter)).to.be.bignumber.equal((tokenIDs.length).toString())
       for (const i of tokenIDs) {
         expect(await this.GhostMarketERC721.ownerOf(new BN(i))).to.equal(minter)
       }
@@ -159,14 +168,14 @@ contract('GhostMarketERC721', async accounts => {
     });
 
     it('should revert if not-owner tries to burn a NFTs', async function () {
-      const tokenIDs = [0]
+      const tokenIDs = [1]
       for (const i of tokenIDs) {
         await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
       }
 
       //confirm minted tokens
       const currentCounter = await this.GhostMarketERC721.getCurrentCounter()
-      expect(await this.GhostMarketERC721.balanceOf(minter)).to.be.bignumber.equal(currentCounter)
+      expect(await this.GhostMarketERC721.balanceOf(minter)).to.be.bignumber.equal((tokenIDs.length).toString())
       for (const i of tokenIDs) {
         expect(await this.GhostMarketERC721.ownerOf(new BN(i))).to.equal(minter)
       }

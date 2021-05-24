@@ -85,6 +85,7 @@ contract ERC721PresetMinterPauserAutoIdUpgradeableCustom is
 		_setupRole(MINTER_ROLE, _msgSender());
 		_setupRole(PAUSER_ROLE, _msgSender());
 		_setupRole(POLYNETWORK_ROLE, _msgSender());
+		_tokenIdTracker.increment();
 	}
 
 	function _baseURI() internal view virtual override returns (string memory) {
