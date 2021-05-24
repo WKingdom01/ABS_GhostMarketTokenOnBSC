@@ -244,7 +244,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 		return _lockedContentViewTracker[tokenId];
 	}
 
-    /**
+  /**
 	 * @dev get a NFT custom attributes
 	 */
 	function getMetadataJson(uint256 tokenId)
@@ -254,6 +254,18 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
     {
 		return _metadataJson[tokenId];
 	}
+
+	/**
+	 * @dev get royalties array
+	 */
+	function getRoyalties(uint256 tokenId)
+        external
+        view
+        returns (Royalty[] memory)
+    {
+		return 	_royalties[tokenId];
+	}
+
 
 	/**
 	 * @dev get a NFT royalties recipients

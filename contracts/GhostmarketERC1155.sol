@@ -265,6 +265,17 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 	}
 
 	/**
+	 * @dev get royalties array
+	 */
+	function getRoyalties(uint256 tokenId)
+        external
+        view
+        returns (Royalty[] memory)
+    {
+		return 	_royalties[tokenId];
+	}
+
+	/**
 	 * @dev get a NFT royalties recipients
 	 */
 	function getRoyaltiesRecipients(uint256 tokenId)

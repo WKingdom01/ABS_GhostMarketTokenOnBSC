@@ -196,6 +196,16 @@ contract('GhostMarketERC721', async accounts => {
       expect(await this.GhostMarketERC721.ownerOf(tokenId)).to.equal(transferToAccount)
     });
 
+    it('should set royalties', async function () {
+      const royaltyValue = 100
+      await this.GhostMarketERC721.mintGhost(minter, [{ recipient: royaltiesAccount, value: royaltyValue }], "ext_uri", "", "");
+      const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
+      const royalties = await this.GhostMarketERC721.getRoyalties(tokenId)
+      expect(royalties.length).to.equal(1);
+      expect(royalties[0].recipient).to.be.bignumber.equal(royaltiesAccount.toString());
+      expect(royalties[0].value).to.be.bignumber.equal(royaltyValue.toString());
+    });
+
     it('should mint tokens with royalty fees', async function () {
       const royaltyValue = 100
       const minterAccountNFTbalance = parseInt((await this.GhostMarketERC721.balanceOf(minter)).toString())

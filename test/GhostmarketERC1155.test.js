@@ -164,6 +164,16 @@ contract('GhostMarketERC1155', async accounts => {
   });
 
   describe('mint with royalty', function () {
+    it('should set royalties', async function () {
+      const royaltyValue = 100
+      const result = await this.GhostMarketERC1155.mintGhost(transferToAccount, mintAmount, data, [{ recipient: royaltiesAccount, value: royaltyValue }], "ext_uri", "", "");
+      const tokenId = await getLastTokenID(this.GhostMarketERC1155)
+      const royalties = await this.GhostMarketERC1155.getRoyalties(tokenId)
+      expect(royalties.length).to.equal(1);
+      expect(royalties[0].recipient).to.be.bignumber.equal(royaltiesAccount.toString());
+      expect(royalties[0].value).to.be.bignumber.equal(royaltyValue.toString());
+    });
+
     it('should mint tokens with royalty fee and address', async function () {      
       const value = 40
       const counter = parseInt((await this.GhostMarketERC1155.getCurrentCounter()).toString())
