@@ -169,6 +169,8 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
         payable
         nonReentrant
     {
+		require(to != address(0x0), "to can't be empty");
+		require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
 		mint(to, _tokenIdTracker.current(), amount, data);
 		if (royalties.length > 0) {
 			_saveRoyalties(_tokenIdTracker.current(), royalties);
@@ -180,7 +182,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 			_setLockedContent(_tokenIdTracker.current(), lockedcontent);
 		}
 		_checkMintFees();
-        require(keccak256(abi.encodePacked(externalURI)) != keccak256(abi.encodePacked("")), "externalURI can't be empty");
 		emit Minted(to, _tokenIdTracker.current(), uri(_tokenIdTracker.current()), externalURI, amount, msg.value);
 		_tokenIdTracker.increment();
 	}
