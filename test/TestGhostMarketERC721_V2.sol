@@ -36,10 +36,10 @@ contract TestGhostMarketERC721_V2 is Initializable, ERC721PresetMinterPauserAuto
 	event RoyaltiesFeesSet(uint256 tokenId, address[] recipients, uint256[] bps);
 	event LockedContentViewed(address msgSender, uint256 tokenId, string lockedContent);
 	event AttributesSet(uint256 tokenId, string metadataJson);
-    event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
+  event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
 	event MintFeesChanged(uint256 newValue);
 	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 mintFees);
-    event NewMintFeeIncremented(uint256 newValue);
+  event NewMintFeeIncremented(uint256 newValue);
 
 	// mint fees balance
 	uint256 internal _payedMintFeesBalance;

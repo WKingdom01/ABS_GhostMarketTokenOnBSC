@@ -77,7 +77,7 @@ contract('GhostMarketERC721', async accounts => {
     expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + tokenId);
   });
 
-  it("should transfer to another account", async function () {
+  it.only("should transfer to another account", async function () {
     await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
     const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
     this.GhostMarketERC721.safeTransferFrom(minter, transferToAccount, tokenId);

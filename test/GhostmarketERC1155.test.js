@@ -1,6 +1,6 @@
 // Load dependencies
 const { expect } = require('chai');
-const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const {
   BN,           // Big Number support
   constants,    // Common constants, like the zero address and largest integers
@@ -12,7 +12,8 @@ const {
 const { ZERO_ADDRESS } = constants;
 
 const { GHOSTMARKET_ERC1155, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, METADATA_JSON, getLastTokenID, POLYNETWORK_ROLE } = require('./include_in_tesfiles.js')
-console.log('testo: ', "testo");
+
+const GhostMarketERC1155_V2 = artifacts.require("TestGhostMarketERC1155_V2");
 // Start test block
 contract('GhostMarketERC1155', async accounts => {
   const [minter, transferToAccount, royaltiesAccount, anotherAccount, royaltiesAccount2] = accounts;
@@ -56,6 +57,26 @@ contract('GhostMarketERC1155', async accounts => {
     await this.GhostMarketERC1155.transferOwnership(transferToAccount);
     expect(await this.GhostMarketERC1155.owner()).to.equal(transferToAccount)
   });
+
+  it.only("should upgrade contract", async function () {
+    const mintFeeValue = ether('0.1')
+    this.GhostMarketERC1155.setGhostmarketMintFee(mintFeeValue)
+
+    //upgrade
+    this.GhostMarketERC1155_V2 = await upgradeProxy(this.GhostMarketERC1155.address, GhostMarketERC1155_V2);
+
+    //test new function
+    assert.equal(await this.GhostMarketERC1155_V2.getSomething(), 10);
+
+    //name and symbol should be the same
+    expect((await this.GhostMarketERC1155_V2.name()).toString()).to.equal(TOKEN_NAME);
+    expect((await this.GhostMarketERC1155_V2.symbol()).toString()).to.equal(TOKEN_SYMBOL);
+
+    // increment already set _ghostmarketMintFees value
+    result = await this.GhostMarketERC1155_V2.incrementMintingFee()
+    expectEvent(result, 'NewMintFeeIncremented', { newValue: '100000000000000001' })
+
+  })
 
   it("should mint token and have base uri", async function () {
     await this.GhostMarketERC1155.mintGhost(minter, mintAmount, data, [], "ext_uri", "", "")
