@@ -14,6 +14,7 @@ const { ZERO_ADDRESS } = constants;
 const { GHOSTMARKET_ERC721_ARTIFACT, TOKEN_NAME, TOKEN_SYMBOL, BASE_URI, METADATA_JSON, POLYNETWORK_ROLE } = require('./include_in_tesfiles.js')
 
 const GhostMarketERC721_V2 = artifacts.require("TestGhostMarketERC721_V2");
+
 // Start test block
 contract('GhostMarketERC721', async accounts => {
   const [minter, transferToAccount, royaltiesAccount, mintingFeeAccount] = accounts;
@@ -77,7 +78,7 @@ contract('GhostMarketERC721', async accounts => {
     expect(await this.GhostMarketERC721.tokenURI(tokenId)).to.equal(BASE_URI + tokenId);
   });
 
-  it.only("should transfer to another account", async function () {
+  it("should transfer to another account", async function () {
     await this.GhostMarketERC721.mintGhost(minter, [], "ext_uri", "", "")
     const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
     this.GhostMarketERC721.safeTransferFrom(minter, transferToAccount, tokenId);
@@ -103,8 +104,7 @@ contract('GhostMarketERC721', async accounts => {
     it("should revert if minter using mintWithURI function has not the POLYNETWORK_ROLE", async function () {
       const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
       await expectRevert(
-        this.GhostMarketERC721.mintWithURI(minter, tokenId, tokenId, { from: transferToAccount }),
-        "mintWithURI: must have POLYNETWORK_ROLE role to mint"
+        this.GhostMarketERC721.mintWithURI(minter, tokenId, tokenId, { from: transferToAccount })
       );
     });
   });
@@ -195,7 +195,7 @@ contract('GhostMarketERC721', async accounts => {
       const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
       expect(await this.GhostMarketERC721.ownerOf(tokenId)).to.equal(minter)
       const tokenURI = await this.GhostMarketERC721.tokenURI(tokenId)
-      expectEvent(result, 'Minted', { toAddress: minter, tokenId: tokenId, tokenURI: tokenURI, externalURI: "ext_uri" })
+      expectEvent(result, 'Minted', { toAddress: minter, tokenId: tokenId, externalURI: "ext_uri" })
     });
 
     it('should mint tokens, nft owner = transferToAccount', async function () {

@@ -58,7 +58,7 @@ contract('GhostMarketERC1155', async accounts => {
     expect(await this.GhostMarketERC1155.owner()).to.equal(transferToAccount)
   });
 
-  it.only("should upgrade contract", async function () {
+  it("should upgrade contract", async function () {
     const mintFeeValue = ether('0.1')
     this.GhostMarketERC1155.setGhostmarketMintFee(mintFeeValue)
 
@@ -208,7 +208,7 @@ contract('GhostMarketERC1155', async accounts => {
       expect(values[0]).to.be.bignumber.equal(value.toString());
       expect(royaltyRecepient[0]).to.be.bignumber.equal(minter.toString());
       const tokenURI = await this.GhostMarketERC1155.uri(tokenId)
-      expectEvent(result, 'Minted', { toAddress: transferToAccount, tokenId: tokenId, tokenURI: tokenURI, amount: mintAmount })
+      expectEvent(result, 'Minted', { toAddress: transferToAccount, tokenId: tokenId, externalURI: "ext_uri", amount: mintAmount })
     });
 
     it('should revert if royalty is more then 50%', async function () {

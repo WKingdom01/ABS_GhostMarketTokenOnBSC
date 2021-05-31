@@ -1,4 +1,4 @@
-# Ghost Market NFT Contract
+# GhostMarket NFT ERC721 & ERC1155 Contracts
 ## Audit
 
 Coming soon...
@@ -45,14 +45,18 @@ truffle deploy --network <MAINNET_NAME>
 ## Testing
 
 tests can be run with:
-```
-truffle test --network <NETWORK_NAME>
-```
-and 
 
 ```
-runGhostMarketERC721_tests.sh
+./runGhostMarketERC721_tests.sh
 ```
+
+default network is `test` or a network parameter can be added
+
+```
+./runGhostMarketERC721_tests.sh bsctestnet
+```
+
+
 ### running individual tests
 
 choose a test file

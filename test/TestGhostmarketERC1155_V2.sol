@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165StorageUpg
  * @dev ERC1155 token with minting, burning, pause, royalties & lock content functions.
  */
 
-contract GhostmarketERC1155_V2 is Initializable, ERC1155PresetMinterPauserUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC165StorageUpgradeable {
+contract TestGhostMarketERC1155_V2 is Initializable, ERC1155PresetMinterPauserUpgradeableCustom, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC165StorageUpgradeable {
 	string public name;
 	string public symbol;
 

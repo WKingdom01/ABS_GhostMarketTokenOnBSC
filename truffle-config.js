@@ -78,7 +78,7 @@ module.exports = {
       provider: function () {
         return new HDWalletProvider({
           privateKeys: ROPSTEN_PRIVATE_KEYS,
-          providerOrUrl: "https://rinkeby.infura.io/v3/" + INFURA_PROJECT_ID,
+          providerOrUrl: "https://ropsten.infura.io/v3/" + INFURA_PROJECT_ID,
           numberOfAddresses: 2,
           derivationPath: "m/44'/60'/0'/0"
         })

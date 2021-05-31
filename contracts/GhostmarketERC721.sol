@@ -31,12 +31,10 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 	mapping(uint256 => string) internal _metadataJson;
 
 	// events
-	event RoyaltiesFeesSet(uint256 tokenId, address[] recipients, uint256[] bps);
 	event LockedContentViewed(address msgSender, uint256 tokenId, string lockedContent);
-	event AttributesSet(uint256 tokenId, string metadataJson);
-  event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
-	event MintFeesChanged(uint256 newValue);
-	event Minted(address toAddress, uint256 tokenId, string tokenURI, string externalURI, uint256 mintFees);
+  	event MintFeesWithdrawn(address feeWithdrawer, uint256 withdrawAmount);
+	event MintFeesUpdated(address feeChanger, uint256 newValue);
+	event Minted(address toAddress, uint256 tokenId, string externalURI);
 
 	// mint fees balance
 	uint256 internal _payedMintFeesBalance;
@@ -85,7 +83,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
     /**
 	 * @dev set a NFT royalties fees & recipients
 	 * fee basis points 10000 = 100%
-	 * emits RoyaltiesFeesSet event if set
 	 */
 	function _saveRoyalties(uint256 tokenId, Royalty[] memory royalties)
         internal
@@ -96,21 +93,16 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 			require(royalties[i].value > 0, "Royalties value should be positive");
 			require(royalties[i].value <= 5000, "Royalties value should not be more than 50%");
 			_royalties[tokenId].push(royalties[i]);
-			address[] memory recipients = new address[](royalties.length);
-			uint256[] memory bps = new uint256[](royalties.length);
-			emit RoyaltiesFeesSet(tokenId, recipients, bps);
 		}
 	}
 
 	/**
 	 * @dev set a NFT custom attributes to contract storage
-	 * emits AttributesSet event
 	 */
 	function _setMetadataJson(uint256 tokenId, string memory metadataJson)
         internal
     {
 		_metadataJson[tokenId] = metadataJson;
-		emit AttributesSet(tokenId, metadataJson);
 	}
 
     /**
@@ -169,7 +161,7 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 			_setLockedContent(tokenId, lockedcontent);
 		}
 		_checkMintFees();
-		emit Minted(to, tokenId, tokenURI(tokenId), externalURI, msg.value);
+		emit Minted(to, tokenId, externalURI);
 	}
 
     /**
@@ -200,14 +192,14 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 
 	/**
 	 * @dev sets Ghostmarket mint fees as uint256
-	 * emits MintFeesChanged event
+	 * emits MintFeesUpdated event
 	 */
 	function setGhostmarketMintFee(uint256 gmmf)
         external
     {
 		require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Caller must have admin role to set mint fees");
 		_ghostmarketMintFees = gmmf;
-		emit MintFeesChanged(_ghostmarketMintFees);
+		emit MintFeesUpdated(msg.sender, _ghostmarketMintFees);
 	}
 
 	/**
