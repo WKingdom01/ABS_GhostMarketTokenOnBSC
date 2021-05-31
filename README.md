@@ -1,4 +1,4 @@
-# Ghost Market NFT Contract
+# GhostMarket NFT ERC721 & ERC1155 Contracts
 ## Audit
 
 Coming soon...
