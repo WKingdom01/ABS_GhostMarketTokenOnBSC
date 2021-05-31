@@ -195,7 +195,7 @@ contract('GhostMarketERC721', async accounts => {
       const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
       expect(await this.GhostMarketERC721.ownerOf(tokenId)).to.equal(minter)
       const tokenURI = await this.GhostMarketERC721.tokenURI(tokenId)
-      expectEvent(result, 'Minted', { toAddress: minter, tokenId: tokenId, tokenURI: tokenURI, externalURI: "ext_uri" })
+      expectEvent(result, 'Minted', { toAddress: minter, tokenId: tokenId, externalURI: "ext_uri" })
     });
 
     it('should mint tokens, nft owner = transferToAccount', async function () {
