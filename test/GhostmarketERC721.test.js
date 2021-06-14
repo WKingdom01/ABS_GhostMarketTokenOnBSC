@@ -104,7 +104,8 @@ contract('GhostMarketERC721', async accounts => {
     it("should revert if minter using mintWithURI function has not the POLYNETWORK_ROLE", async function () {
       const tokenId = new BN(parseInt(await this.GhostMarketERC721.getLastTokenID()))
       await expectRevert(
-        this.GhostMarketERC721.mintWithURI(minter, tokenId, tokenId, { from: transferToAccount })
+        this.GhostMarketERC721.mintWithURI(minter, tokenId, tokenId, { from: transferToAccount }),
+        "mintWithURI: must have POLYNETWORK_ROLE role to mint"
       );
     });
   });
