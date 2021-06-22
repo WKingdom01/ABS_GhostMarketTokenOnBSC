@@ -137,7 +137,6 @@ contract GhostMarketERC1155 is Initializable, ERC1155PresetMinterPauserUpgradeab
 
 	/**
 	 * @dev check mint fees sent to contract
-	 * emits MintFeesPaid event if set
 	 */
 	function _checkMintFees()
         internal

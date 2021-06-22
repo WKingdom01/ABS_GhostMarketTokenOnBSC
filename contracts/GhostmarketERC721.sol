@@ -116,7 +116,6 @@ contract GhostMarketERC721 is Initializable, ERC721PresetMinterPauserAutoIdUpgra
 
     /**
 	 * @dev check mint fees sent to contract
-	 * emits MintFeesPaid event if set
 	 */
 	function _checkMintFees()
         internal
