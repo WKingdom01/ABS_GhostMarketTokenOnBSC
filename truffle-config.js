@@ -136,6 +136,6 @@ module.exports = {
     'truffle-plugin-verify'
   ],
   api_keys: {
-    bscscan: BSCSCAN_TESTNET_API_KEY
+    bscscan: BSCSCAN_MAINNET_API_KEY
   }
 };
