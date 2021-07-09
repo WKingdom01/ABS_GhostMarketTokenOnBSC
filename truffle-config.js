@@ -92,8 +92,6 @@ module.exports = {
         return new HDWalletProvider(
           BSC_TESTNET_PRIVATE_KEY,
           "https://data-seed-prebsc-2-s1.binance.org:8545/"
-          // alternative RPC
-          //"https://data-seed-prebsc-1-s3.binance.org:8545"
         );
       },
       network_id: "97",
@@ -105,8 +103,6 @@ module.exports = {
         return new HDWalletProvider(
           BSC_MAINNET_PRIVATE_KEY,
           "https://bsc-dataseed.binance.org/"
-          // alternative RPC
-          //"https://bsc-dataseed1.defibit.io/"
         );
       },
       network_id: "56",
