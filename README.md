@@ -44,6 +44,16 @@ For local deployment ganache must be started and private keys saved into
 .secrets.json
 ```
 
+secrets.json structure:
+
+```
+{
+    "BSC_TESTNET_PRIVATE_KEY": ["key1","key1"],
+    "BSC_MAINNET_PRIVATE_KEY": ["key1","key1"],
+    "LOCAL_PRIVATE_KEYS": ["key1","key1"],
+}
+```
+
 local deployment:
 ```
 truffle deploy --network development
