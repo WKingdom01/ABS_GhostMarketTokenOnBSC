@@ -1,4 +1,4 @@
-# GhostMarket NFT ERC721 & ERC1155 Contracts
+# GhostMarket BSC NFT ERC721 & ERC1155 Contracts
 ## Deployed Contracts:
 
 #### GhostMarketERC721
