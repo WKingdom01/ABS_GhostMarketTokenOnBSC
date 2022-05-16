@@ -97,6 +97,8 @@ module.exports = {
       network_id: "97",
       gas: 10000000,
       gasPrice: 10000000000,
+      timeoutBlocks: 50000,
+      networkCheckTimeout: 100000,
     },
     bscmainnet: {
       provider: function () {

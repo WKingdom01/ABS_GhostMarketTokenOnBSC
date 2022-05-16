@@ -151,7 +151,7 @@ contract ERC721PresetMinterPauserAutoIdUpgradeableCustom is
 	}
 
 	function getLastTokenID() public view returns (uint256) {
-		if (_tokenIdTracker.current() == 0) {
+		if (_tokenIdTracker.current() == 1) {
 			return _tokenIdTracker.current();
 		} else return _tokenIdTracker.current() - 1;
 	}
